@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import Profil from "./sensible.model.ts";
 
 // costum validation
 
@@ -76,6 +77,10 @@ const userSchema = new Schema({
       },
       message: "Invalid username",
     },
+  },
+  profil: {
+    type: Schema.Types.ObjectId,
+    ref: "Profil",
   },
 });
 

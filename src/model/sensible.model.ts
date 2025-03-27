@@ -139,6 +139,6 @@ const sensibleDataSchema = new Schema({
   },
 });
 
-const SensibleData = model("SensibleData", sensibleDataSchema);
+const SensibleData = model("Profil", sensibleDataSchema);
 
 export default SensibleData;
