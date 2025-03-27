@@ -38,6 +38,10 @@ const userSchema = new Schema({
     minLength: 6,
     maxLength: 60,
   },
+  verified: {
+    type: Boolean,
+    default: false,
+  },
   profil: {
     type: Schema.Types.ObjectId,
     ref: "Profil",

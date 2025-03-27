@@ -25,7 +25,7 @@ const addressSchema = new Schema({
     maxLength: 50,
     validate: {
       validator: function (val: string) {
-        return onlyLetters.test(val);
+        return names.test(val);
       },
       message: "Street must contain only letters",
     },
@@ -45,7 +45,7 @@ const addressSchema = new Schema({
     maxLength: 50,
     validate: {
       validator: function (val: string) {
-        return onlyLetters.test(val);
+        return names.test(val);
       },
       message: "City must contain only letters",
     },
