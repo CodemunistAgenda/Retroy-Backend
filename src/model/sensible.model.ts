@@ -1,6 +1,7 @@
 import { Schema, model } from "mongoose";
 import crypto from "crypto-js";
 import "dotenv/config.js";
+import { onlyLetters as names, email, iban } from "../utils/regex";
 
 const encriptionKey = process.env.ENCRYPTION_KEY;
 
@@ -14,11 +15,6 @@ const decryptData = (data: string) => {
   const decryptedData = bytes.toString(crypto.enc.Utf8);
   return decryptedData;
 };
-
-const onlyLetters = /^[A-Za-zÄÖÜäöüßÉéÈèȨȩÑñÇç\- ]+$/;
-const telNumber = /^[0-9+ ]+$/;
-const email = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-const iban = /^[A-Z]{2}[0-9]{2}[a-zA-Z0-9]{4}[0-9]{7}([a-zA-Z0-9]?){0,16}$/;
 
 const addressSchema = new Schema({
   street: {
@@ -54,7 +50,7 @@ const addressSchema = new Schema({
       message: "City must contain only letters",
     },
   },
-  postalCode: {
+  zip: {
     type: String,
     required: true,
     trim: true,
@@ -68,6 +64,44 @@ const sensibleDataSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "User",
     required: true,
+  },
+  firstName: {
+    type: String,
+    required: true,
+    trim: true,
+    minLength: 3,
+    maxLength: 20,
+    validate: {
+      validator: function (val: string) {
+        return names.test(val);
+      },
+      message: "Firstname must contain only letters",
+    },
+  },
+  secondName: {
+    type: String,
+    trim: true,
+    minLength: 3,
+    maxLength: 20,
+    validate: {
+      validator: function (val: string) {
+        return names.test(val);
+      },
+      message: "Secondname must contain only letters",
+    },
+  },
+  lastName: {
+    type: String,
+    required: true,
+    trim: true,
+    minLength: 3,
+    maxLength: 20,
+    validate: {
+      validator: function (val: string) {
+        return names.test(val);
+      },
+      message: "Lastname must contain only letters",
+    },
   },
   address: {
     type: addressSchema,
