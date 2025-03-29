@@ -2,6 +2,7 @@ import express from "express";
 import "dotenv/config.js";
 import cors from "cors";
 import "./src/config/connect.ts";
+import routes from "./src/routes/index.ts";
 
 // variables
 const app = express();
@@ -12,7 +13,7 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-// here are the router routes added
+app.use("/api", routes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

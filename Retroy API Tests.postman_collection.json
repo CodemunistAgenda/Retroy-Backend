@@ -1,0 +1,222 @@
+{
+	"info": {
+		"_postman_id": "f8935f0e-591d-4e2f-a1fa-49bb2b4facf0",
+		"name": "Retroy API Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20528167",
+		"_collection_link": "https://www.postman.com/red-eclipse-24199/workspace/orhan/collection/20528167-f8935f0e-591d-4e2f-a1fa-49bb2b4facf0?action=share&source=collection_link&creator=20528167"
+	},
+	"item": [
+		{
+			"name": "Auth - Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"max@example.com\",\n  \"password\": \"123456\"\n}"
+				},
+				"url": {
+					"raw": "localhost:5001/api/auth/login",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Auth - Register",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"firstName\": \"Max\",\n  \"lastName\": \"Muster\",\n  \"userName\": \"max123\",\n  \"email\": \"max@example.com\",\n  \"password\": \"123456\"\n}"
+				},
+				"url": {
+					"raw": "localhost:5001/api/auth/register",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cart - Get User Cart",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5001/api/cart/67e5b87e06ba62a14df83400",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"cart",
+						"67e5b87e06ba62a14df83400"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cart - Add to Cart",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"userId\":\"67e5b87e06ba62a14df83400\",\n  \"productId\": \"67e5ba9bc6d0ea4a0e08c12e\",\n  \"quantity\": 1,\n  \"price\": 29.99,\n  \"title\": \"Vintage Shirt\",\n  \"images\": []\n}"
+				},
+				"url": {
+					"raw": "localhost:5001/api/cart",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"cart"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Products - Get All",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5001/api/products",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"products"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Orders - Create Order",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"user\": \"67e5b87e06ba62a14df83400\",\n  \"items\": [\n    {\n      \"productId\": \"67e5bb72c6d0ea4a0e08c139\",\n      \"title\": \"Vintage Shirt\",\n      \"price\": 29.99,\n      \"quantity\": 1\n    }\n  ],\n  \"shippingCost\": 5.99,\n  \"taxAmount\": 4.78,\n  \"totalAmount\": 35.98,\n  \"shippingAddress\": {\n    \"street\": \"Beispielstraße 12\",\n    \"city\": \"Berlin\",\n    \"postalCode\": \"10115\",\n    \"country\": \"Deutschland\"\n  },\n  \"status\": \"pending\",\n  \"paymentStatus\": \"pending\"\n}\n"
+				},
+				"url": {
+					"raw": "localhost:5001/api/orders",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"orders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Orders - Get All",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5001/orders",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"orders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Product -Create",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Vintage T-Shirt\",\n  \"description\": \"Ein cooles Retro-T-Shirt mit einzigartigem Design.\",\n  \"price\": 29.99,\n  \"stock\": 100,\n  \"category\": \"Bekleidung\",\n  \"images\": [\n    \"https://example.com/image1.jpg\",\n    \"https://example.com/image2.jpg\"\n  ]\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5001/api/products",
+					"host": [
+						"localhost"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"products"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
