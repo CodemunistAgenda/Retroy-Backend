@@ -1,4 +1,4 @@
-import express, { Router } from "express";
+import { Router } from "express";
 
 import { register, login, deleteUser, restore } from "../controllers/userController.ts";
 import { verifyUser } from "../controllers/verifyUser.ts";

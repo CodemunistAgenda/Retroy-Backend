@@ -83,7 +83,61 @@ export const register = async (req: Request, res: Response): Promise<void> => {
  * @route POST /api/user/login
  */
 
-export const login = async (req: Request, res: Response): Promise<void> => {};
+export const login = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, username, password } = req.body;
+
+    if (!password) {
+      res.status(400).json({ message: "Enter a password!" });
+      return;
+    }
+
+    if (!email && !username) {
+      res.status(400).json({ message: "Please enter email or username" });
+      return;
+    }
+    let user;
+
+    if (email) {
+      if (!Validator.isEmail(email)) {
+        res.status(400).json({ message: "Invalid email" });
+        return;
+      }
+      user = await User.findOne({ email });
+      if (!user || user.deleted?.isDeleted) {
+        res.status(400).json({ message: "Login failed wrong credentials" });
+        return;
+      }
+    } else if (username) {
+      if (!Validator.isAlphanumeric(username)) {
+        res.status(400).json({ message: "Invalid username" });
+        return;
+      }
+      user = await User.findOne({ userName: username });
+      if (!user || user.deleted?.isDeleted) {
+        res.status(404).json({ message: "Login failed wrong credentials" });
+        return;
+      }
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user?.password as string);
+
+    if (!passwordMatch) {
+      res.status(400).json({ message: "Login failed wrong credentials" });
+      return;
+    }
+
+    const token = jwt.sign({ id: user?._id }, process.env.JWT_SECRET as string, {
+      expiresIn: "1h",
+    });
+    res.status(200).json({
+      message: "Login successful",
+      token,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+};
 
 /** 
  * @desc Deleting (Softdelete) a user
@@ -123,7 +177,6 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
     res.status(200).json({ message: "User marked for deletion" });
   } catch (err) {
     res.status(500).json({ message: "Error deleting user", error: err });
-    throw new Error("Error deleting user:", err as Error);
   }
 };
 
@@ -163,6 +216,5 @@ export const restore = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({ message: "User restored successfully" });
   } catch (err) {
     res.status(500).json({ message: "Error restoring user", error: err });
-    throw new Error("Error restoring user:", err as Error);
   }
 };

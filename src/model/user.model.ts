@@ -1,17 +1,16 @@
 import { Schema, model } from "mongoose";
-import Profil from "./sensible.model.ts";
-import { onlyLetters as names, email, userName } from "../utils/regex.ts";
+import { onlyLetters as names, email, username } from "../utils/regex.ts";
 // costum validation
 
 const userSchema = new Schema({
-  userName: {
+  username: {
     type: String,
     required: true,
     trim: true,
     unique: true,
     validate: {
       validator: function (val: string) {
-        return userName.test(val);
+        return username.test(val);
       },
       message: "Invalid username",
     },

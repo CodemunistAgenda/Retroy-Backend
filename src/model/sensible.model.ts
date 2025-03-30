@@ -65,7 +65,7 @@ const sensibleDataSchema = new Schema({
     ref: "User",
     required: true,
   },
-  firstName: {
+  firstname: {
     type: String,
     required: true,
     trim: true,
@@ -78,7 +78,7 @@ const sensibleDataSchema = new Schema({
       message: "Firstname must contain only letters",
     },
   },
-  secondName: {
+  secondname: {
     type: String,
     trim: true,
     minLength: 3,
@@ -90,7 +90,7 @@ const sensibleDataSchema = new Schema({
       message: "Secondname must contain only letters",
     },
   },
-  lastName: {
+  lastname: {
     type: String,
     required: true,
     trim: true,
