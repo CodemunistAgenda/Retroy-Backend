@@ -1,4 +1,4 @@
-import express, { type Request, type Response } from "express";
+import { type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import Validator from "validator";
 import jwt from "jsonwebtoken";
@@ -77,7 +77,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 /**
  * @desc Login a user
- * @route POST /api/user/login
+ * @route POST /user/login
  */
 
 export const login = async (req: Request, res: Response): Promise<void> => {
@@ -138,7 +138,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 /** 
  * @desc Deleting (Softdelete) a user
- * @route POST /api/user/delete/:id
+ * @route POST user/delete/:id
 
 */
 

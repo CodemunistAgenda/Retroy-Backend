@@ -19,7 +19,6 @@
         "zxcvbn": "^4.4.2"
       },
       "devDependencies": {
-        "@types/bcryptjs": "^3.0.0",
         "@types/bun": "latest",
         "@types/cors": "^2.8.17",
         "@types/crypto-js": "^4.2.2",
@@ -42,13 +41,6 @@
       "sha512-+ywrb0AqkfaYuhHs6LxKWgqbh3I72EpEgESCw37o+9qPx9WTCkgDm2B+eMrwehGtHBWHFU4GXvnSCNiFhhausg=="
     ],
 
-    "@types/bcryptjs": [
-      "@types/bcryptjs@3.0.0",
-      "",
-      { "dependencies": { "bcryptjs": "*" } },
-      "sha512-WRZOuCuaz8UcZZE4R5HXTco2goQSI2XxjGY3hbM/xDvwmqFWd4ivooImsMx65OKM6CtNKbnZ5YL+YwAwK7c1dg=="
-    ],
-
     "@types/body-parser": [
       "@types/body-parser@1.19.5",
       "",
@@ -57,10 +49,10 @@
     ],
 
     "@types/bun": [
-      "@types/bun@1.2.6",
+      "@types/bun@1.2.8",
       "",
-      { "dependencies": { "bun-types": "1.2.6" } },
-      "sha512-fY9CAmTdJH1Llx7rugB0FpgWK2RKuHCs3g2cFDYXUutIy1QGiPQxKkGY8owhfZ4MXWNfxwIbQLChgH5gDsY7vw=="
+      { "dependencies": { "bun-types": "1.2.7" } },
+      "sha512-t8L1RvJVUghW5V+M/fL3Thbxcs0HwNsXsnTEBEfEVqGteiJToOlZ/fyOEaR1kZsNqnu+3XA4RI/qmnX4w6+S+w=="
     ],
 
     "@types/connect": [
@@ -196,10 +188,10 @@
     ],
 
     "@types/ws": [
-      "@types/ws@8.5.14",
+      "@types/ws@8.18.0",
       "",
       { "dependencies": { "@types/node": "*" } },
-      "sha512-bd/YFLW+URhBzMXurx7lWByOu+xzU9+kb3RboOteXYDfW+tr+JZa99OyNmPINEGB/ahzKrEuc8rcv4gnpJmxTw=="
+      "sha512-8svvI3hMyvN0kKCJMvTJP/x6Y/EoQbepff882wL+Sn5QsXb3etnamgrJq4isrBxSJj5L2AuXcI0+bgkoAXGUJw=="
     ],
 
     "@types/zxcvbn": [
@@ -267,10 +259,10 @@
     ],
 
     "bun-types": [
-      "bun-types@1.2.6",
+      "bun-types@1.2.7",
       "",
-      { "dependencies": { "@types/node": "*", "@types/ws": "~8.5.10" } },
-      "sha512-FbCKyr5KDiPULUzN/nm5oqQs9nXCHD8dVc64BArxJadCvbNzAI6lUWGh9fSJZWeDIRD38ikceBU8Kj/Uh+53oQ=="
+      { "dependencies": { "@types/node": "*", "@types/ws": "*" } },
+      "sha512-P4hHhk7kjF99acXqKvltyuMQ2kf/rzIw3ylEDpCxDS9Xa0X0Yp/gJu/vDCucmWpiur5qJ0lwB2bWzOXa2GlHqA=="
     ],
 
     "bytes": [
@@ -604,6 +596,53 @@
       "sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g=="
     ],
 
+    "jsonwebtoken": [
+      "jsonwebtoken@9.0.2",
+      "",
+      {
+        "dependencies": {
+          "jws": "^3.2.2",
+          "lodash.includes": "^4.3.0",
+          "lodash.isboolean": "^3.0.3",
+          "lodash.isinteger": "^4.0.4",
+          "lodash.isnumber": "^3.0.3",
+          "lodash.isplainobject": "^4.0.6",
+          "lodash.isstring": "^4.0.1",
+          "lodash.once": "^4.0.0",
+          "ms": "^2.1.1",
+          "semver": "^7.5.4"
+        }
+      },
+      "sha512-PRp66vJ865SSqOlgqS8hujT5U4AOgMfhrwYIuIhfKaoSCZcirrmASQr8CX7cUg+RMih+hgznrjp99o+W4pJLHQ=="
+    ],
+
+    "jwa": [
+      "jwa@1.4.1",
+      "",
+      {
+        "dependencies": {
+          "buffer-equal-constant-time": "1.0.1",
+          "ecdsa-sig-formatter": "1.0.11",
+          "safe-buffer": "^5.0.1"
+        }
+      },
+      "sha512-qiLX/xhEEFKUAJ6FiBMbes3w9ATzyk5W7Hvzpa/SLYdxNtng+gcurvrI7TbACjIXlsJyr05/S1oUhZrc63evQA=="
+    ],
+
+    "jws": [
+      "jws@3.2.2",
+      "",
+      { "dependencies": { "jwa": "^1.4.1", "safe-buffer": "^5.0.1" } },
+      "sha512-YHlZCB6lMTllWDtSPHz/ZXTsi8S00usEV6v1tjq8tOUZzw7DpSDWVXjXDre6ed1w/pd495ODpHZYSdkRTsa0HA=="
+    ],
+
+    "jwt": [
+      "jwt@0.2.0",
+      "",
+      { "dependencies": { "node-base64": "0.0.1" } },
+      "sha512-+lsJgK3p+dr7yCHO19Ap2uFh+pMSCayPRGjWmf3kYCnYfO+1kqz4DqA8s65HKYIrw5c2NBo+dEvzoZUco09j4Q=="
+    ],
+
     "kareem": [
       "kareem@2.6.3",
       "",
@@ -698,7 +737,7 @@
     "mime": [
       "mime@1.6.0",
       "",
-      { "bin": { "mime": "cli.js" } },
+      { "bin": "cli.js" },
       "sha512-x0Vn8spI+wuJ1O6S7gnbaQg8Pxh4NNHb7KSINmEWKiPE4RKOplvijn+NkmYmmRgP68mc70j2EbeTFRsrswaQeg=="
     ],
 
@@ -1116,6 +1155,20 @@
       "",
       {},
       "sha512-TPJXq8JqFaVYm2CWmPvnP2Iyo4ZSM7/QKcSmuMLDObfpH5fi7RUGmd/rTDf+rut/saiDiQEeVTNgAmJEdAOx0w=="
+    ],
+
+    "send/ms": [
+      "ms@2.1.3",
+      "",
+      {},
+      "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="
+    ],
+
+    "mquery/debug/ms": [
+      "ms@2.1.3",
+      "",
+      {},
+      "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA=="
     ]
   }
 }
