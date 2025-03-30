@@ -1,14 +1,18 @@
 import mongoose from "mongoose";
-import "dotenv";
+import "dotenv/config";
 
 const connect = async () => {
-  const uri = process.env.DB_URI;
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
+    throw new Error("❌ MONGODB_URI .env dosyasında tanımlı değil!");
+  }
 
   try {
-    await mongoose.connect(uri as string);
-    console.log("Connected to database");
-  } catch (err) {
-    console.error("Error connecting to database: ", (err as Error).message);
+    await mongoose.connect(uri);
+    console.log("✅ MongoDB successfully connected!");
+  } catch (error) {
+    console.error("❌ MongoDB connection failed:", error);
   }
 };
 

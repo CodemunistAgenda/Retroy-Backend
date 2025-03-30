@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import "dotenv/config.js";
 import cors from "cors";
 import "./src/config/connect.ts";
+import routes from "./src/routes/index.ts";
 import userRouter from "./src/routes/userRouter.ts";
 
 const Limiter = rateLimit({
@@ -19,11 +20,6 @@ const PORT = process.env.PORT || 5001;
 
 app.use(cors());
 app.use(express.json());
-// app.use(Limiter);
-
-// auth routes
-
-// app.use("/api/auth", authRouter); // wichtig für JWT
 
 // here are the router routes added
 
