@@ -1,10 +1,10 @@
-import express, { type Request, type Response } from "express";
+import { type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import Validator from "validator";
 import jwt from "jsonwebtoken";
 import zxcvbn from "zxcvbn";
 
-import User from "../model/user.model.ts";
+import User from "../models/user.model.ts";
 import { blacklistedMails } from "../utils/tempmailing.ts";
 import { sendVerficationEmail } from "../middleware/sendingMails.ts";
 
