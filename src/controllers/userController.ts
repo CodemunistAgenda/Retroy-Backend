@@ -1,5 +1,5 @@
 import express, { type Request, type Response } from "express";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import Validator from "validator";
 import jwt from "jsonwebtoken";
 import zxcvbn from "zxcvbn";
@@ -14,10 +14,10 @@ import { sendVerficationEmail } from "../middleware/sendingMails.ts";
  */
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-  const { Firstname, secondName, Lastname, email, password, username } = req.body;
+  const { email, password, username } = req.body;
 
   try {
-    if (!Firstname || !Lastname || !email || !password || !username) {
+    if (!email || !password || !username) {
       res.status(400).json({ message: "Please fill all fields" });
       return;
     }
@@ -54,20 +54,17 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     }
 
     const newUser = new User({
-      firstName: Firstname,
-      secondName,
-      lastName: Lastname,
       email,
       password: hashedPassword,
-      userName: username,
+      username: username,
     });
-    await newUser.save();
 
     const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET as string, {
       expiresIn: "1h",
     });
 
     await sendVerficationEmail(email, verificationToken);
+    await newUser.save();
 
     res.status(201).json({
       message: "User registered successfully",
@@ -113,7 +110,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         res.status(400).json({ message: "Invalid username" });
         return;
       }
-      user = await User.findOne({ userName: username });
+      user = await User.findOne({ username: username });
       if (!user || user.deleted?.isDeleted) {
         res.status(404).json({ message: "Login failed wrong credentials" });
         return;

@@ -19,13 +19,17 @@ const PORT = process.env.PORT || 5001;
 
 app.use(cors());
 app.use(express.json());
-app.use(Limiter);
+// app.use(Limiter);
 
 // auth routes
 
 // app.use("/api/auth", authRouter); // wichtig für JWT
 
 // here are the router routes added
+
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 app.use("/user", userRouter);
 
