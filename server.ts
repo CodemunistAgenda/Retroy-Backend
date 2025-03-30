@@ -28,6 +28,8 @@ app.get("/", (_, res) => {
   res.send("Hello World!");
 });
 
+app.use("/api", routes);
+
 app.use("/user", userRouter);
 
 app.listen(PORT, () => {
