@@ -1,6 +1,5 @@
 import express, { type Request, type Response } from "express";
 import bcrypt from "bcrypt";
-import rateLimit from "express-rate-limit";
 import Validator from "validator";
 import jwt from "jsonwebtoken";
 import zxcvbn from "zxcvbn";
@@ -9,11 +8,10 @@ import User from "../model/user.model.ts";
 import { blacklistedMails } from "../utils/tempmailing.ts";
 import { sendVerficationEmail } from "../middleware/sendingMails.ts";
 
-const registerLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // IP limit
-  message: "Too many requests, please try again later.",
-});
+/**
+ * @desc Register a new user, hash the password, and send a verification email
+ * @route POST /user/register
+ */
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   const { Firstname, secondName, Lastname, email, password, username } = req.body;
@@ -21,20 +19,24 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!Firstname || !Lastname || !email || !password || !username) {
       res.status(400).json({ message: "Please fill all fields" });
+      return;
     }
 
     if (!Validator.isEmail(email)) {
       res.status(400).json({ message: "Invalid email" });
+      return;
     }
 
     const mailDomain = email.split("@")[1].toLowerCase();
     if (blacklistedMails.includes(mailDomain)) {
       res.status(400).json({ message: "Temporary email addresses are not allowed" });
+      return;
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       res.status(400).json({ message: "this mail is in use" });
+      return;
     }
 
     const passwordStrength = zxcvbn(password);
@@ -42,6 +44,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({
         message: passwordStrength.feedback.suggestions.join(" "),
       });
+      return;
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -75,4 +78,91 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+/**
+ * @desc Login a user
+ * @route POST /api/user/login
+ */
+
 export const login = async (req: Request, res: Response): Promise<void> => {};
+
+/** 
+ * @desc Deleting (Softdelete) a user
+ * @route POST /api/user/delete/:id
+
+*/
+
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.id;
+    const { reason } = req.body;
+
+    if (!userId) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      res.status(404).json({ message: "No user registered with this ID" });
+      return;
+    }
+
+    if (user.deleted?.isDeleted) {
+      res.status(400).json({ message: "Deleting request failed, user is already deleted" });
+      return;
+    }
+
+    user.deleted = {
+      isDeleted: true,
+      deletedAt: new Date(),
+      reason: reason || "No reason provided",
+    };
+
+    await user.save();
+    res.status(200).json({ message: "User marked for deletion" });
+  } catch (err) {
+    res.status(500).json({ message: "Error deleting user", error: err });
+    throw new Error("Error deleting user:", err as Error);
+  }
+};
+
+/**
+ * @desc Restore a deleted user
+ * @route POST /api/user/restore/:id
+ */
+
+export const restore = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.id;
+
+    if (!userId) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      res.status(404).json({ message: "No user registered with this ID" });
+      return;
+    }
+
+    if (user.deleted?.isDeleted === false) {
+      res.status(400).json({ message: "Restore Request failed, user isnt deleted." });
+      return;
+    }
+
+    user.deleted = {
+      isDeleted: false,
+      deletedAt: null as unknown as Date,
+      reason: null as unknown as string,
+    };
+
+    await user.save();
+    res.status(200).json({ message: "User restored successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Error restoring user", error: err });
+    throw new Error("Error restoring user:", err as Error);
+  }
+};

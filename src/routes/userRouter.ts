@@ -1,10 +1,15 @@
 import express, { Router } from "express";
 
-import { register, login } from "../controllers/userController.ts";
+import { register, login, deleteUser, restore } from "../controllers/userController.ts";
 import { verifyUser } from "../controllers/verifyUser.ts";
 
 const userRouter = Router();
 
-userRouter.post("/register", register).post("/login", login).get("/verify", verifyUser);
+userRouter
+  .post("/register", register)
+  .post("/login", login)
+  .get("/verify", verifyUser)
+  .post("/delete/:id", deleteUser)
+  .post("/restore/:id", restore);
 
 export default userRouter;

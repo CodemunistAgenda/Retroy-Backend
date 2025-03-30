@@ -42,6 +42,11 @@ const userSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  deleted: {
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
+    reason: { type: String, default: null },
+  },
   profil: {
     type: Schema.Types.ObjectId,
     ref: "Profil",

@@ -1,8 +1,15 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import "dotenv/config.js";
 import cors from "cors";
 import "./src/config/connect.ts";
 import userRouter from "./src/routes/userRouter.ts";
+
+const Limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // IP limit
+  message: "Too many requests, please try again later.",
+});
 
 // variables
 const app = express();
@@ -12,6 +19,7 @@ const PORT = process.env.PORT || 5001;
 
 app.use(cors());
 app.use(express.json());
+app.use(Limiter);
 
 // auth routes
 
