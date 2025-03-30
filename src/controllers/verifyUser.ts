@@ -1,7 +1,7 @@
 import { type Request, type Response } from "express";
 
 import Jwt from "jsonwebtoken";
-import User from "../model/user.model.ts";
+import User from "../models/user.model.ts";
 
 export const verifyUser = async (req: Request, res: Response): Promise<void> => {
   const { token } = req.query;

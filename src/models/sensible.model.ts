@@ -157,9 +157,10 @@ const sensibleDataSchema = new Schema({
           bic: String,
         },
       },
-      isPrimary: {
-        type: Boolean,
-        default: false,
+      Primary: {
+        type: String,
+        enum: ["paypal", "creditCard", "bankTransfer"],
+        default: null,
       },
     },
   ],

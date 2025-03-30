@@ -6,7 +6,7 @@ import { verifyUser } from "../controllers/verifyUser.ts";
 const userRouter = Router();
 
 userRouter
-  .get("/", (req, res) => {
+  .get("/", (_, res) => {
     res.send("Hello from user router");
   })
   .post("/register", register)

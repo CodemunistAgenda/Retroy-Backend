@@ -1,8 +1,7 @@
 import Cart from "../models/cart.model";
-import { Request, Response } from "express";
+import { type Request, type Response } from "express";
 
-
-export const getUserCart = async (req: Request, res: Response) => {
+export const getUserCart = async (req: Request, res: Response): Promise<void> => {
   try {
     const cart = await Cart.findOne({ userId: req.params.userId });
     res.json(cart || { userId: req.params.userId, items: [] });
@@ -11,8 +10,7 @@ export const getUserCart = async (req: Request, res: Response) => {
   }
 };
 
-
-export const addToCart = async (req: Request, res: Response) => {
+export const addToCart = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId, productId, quantity, price, title, image } = req.body;
     let cart = await Cart.findOne({ userId });
@@ -23,9 +21,7 @@ export const addToCart = async (req: Request, res: Response) => {
         items: [{ productId, quantity, price, title, image }],
       });
     } else {
-      const existingItem = cart.items.find(
-        (item) => item.productId.toString() === productId
-      );
+      const existingItem = cart.items.find((item) => item.productId.toString() === productId);
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
