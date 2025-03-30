@@ -19,6 +19,7 @@
         "zxcvbn": "^4.4.2"
       },
       "devDependencies": {
+        "@types/bcryptjs": "^3.0.0",
         "@types/bun": "latest",
         "@types/cors": "^2.8.17",
         "@types/crypto-js": "^4.2.2",
