@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { register, login, deleteUser, restore } from "../controllers/userController.ts";
+import { register, login, deleteUser, restore, logout, refreshToken } from "../controllers/auth.controller.ts";
 import { verifyUser } from "../controllers/verifyUser.ts";
 
 const userRouter = Router();
@@ -12,7 +12,9 @@ userRouter
   .post("/register", register)
   .post("/login", login)
   .get("/verify", verifyUser)
-  .post("/delete/:id", deleteUser)
-  .post("/restore/:id", restore);
+  .post("/restore/:id", restore)
+  .post("/logout", logout)
+  .get("/refresh", refreshToken)
+  .post("/delete/:id", deleteUser);
 
 export default userRouter;

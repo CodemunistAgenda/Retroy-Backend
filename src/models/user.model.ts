@@ -1,6 +1,6 @@
 import { Schema, model } from "mongoose";
-import { onlyLetters as names, email, username } from "../utils/regex.ts";
 // costum validation
+import { onlyLetters as names, email, username } from "../utils/regex.ts";
 
 const userSchema = new Schema({
   username: {

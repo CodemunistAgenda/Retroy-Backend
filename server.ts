@@ -2,7 +2,10 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import "dotenv/config.js";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+
 import "./src/config/connect.ts";
+import routes from "./src/routes/index.ts";
 import userRouter from "./src/routes/userRouter.ts";
 
 const Limiter = rateLimit({
@@ -19,17 +22,16 @@ const PORT = process.env.PORT || 5001;
 
 app.use(cors());
 app.use(express.json());
-// app.use(Limiter);
-
-// auth routes
-
-// app.use("/api/auth", authRouter); // wichtig für JWT
+app.use(cookieParser()); // need to read the cookies to get the refresh token
+// app.use(Limiter);  // Out of service for development
 
 // here are the router routes added
 
-app.get("/", (req, res) => {
+app.get("/", (_, res) => {
   res.send("Hello World!");
 });
+
+app.use("/api", routes);
 
 app.use("/user", userRouter);
 
