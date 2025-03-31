@@ -180,6 +180,7 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 /**
  * @desc Restore a deleted user
  * @route POST /api/user/restore/:id
+ * @info Das ist für Admins gedacht, um gelöschte User wiederherzustellen
  */
 
 export const restore = async (req: Request, res: Response): Promise<void> => {

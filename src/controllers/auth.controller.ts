@@ -8,6 +8,9 @@ import User from "../models/user.model.ts";
 import { blacklistedMails } from "../utils/tempmailing.ts";
 import { sendVerficationEmail } from "../middleware/sendingMails.ts";
 
+const JWT_ACCESS_EXPIRATION = "1h"; // JWT expiration time
+const JWT_REFRESH_EXPIRATION = "7d";
+
 /**
  * @desc Register a new user, hash the password, and send a verification email
  * @route POST /user/register
@@ -82,7 +85,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, username, password } = req.body;
+    const { email, username, password, remeberMe } = req.body;
 
     if (!password) {
       res.status(400).json({ message: "Enter a password!" });
@@ -102,17 +105,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       }
       user = await User.findOne({ email });
       if (!user || user.deleted?.isDeleted) {
-        res.status(400).json({ message: "Login failed wrong credentials" });
+        res.status(401).json({ message: "Incorrect email, username or Passwort" });
         return;
       }
     } else if (username) {
       if (!Validator.isAlphanumeric(username)) {
-        res.status(400).json({ message: "Invalid username" });
+        res.status(401).json({ message: "Invalid username" });
         return;
       }
       user = await User.findOne({ username: username });
       if (!user || user.deleted?.isDeleted) {
-        res.status(404).json({ message: "Login failed wrong credentials" });
+        res.status(401).json({ message: "Incorrect email, username or Passwort" });
         return;
       }
     }
@@ -120,17 +123,88 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const passwordMatch = await bcrypt.compare(password, user?.password as string);
 
     if (!passwordMatch) {
-      res.status(400).json({ message: "Login failed wrong credentials" });
+      res.status(400).json({ message: "Incorrect email, username or Passwort" });
       return;
     }
 
-    const token = jwt.sign({ id: user?._id }, process.env.JWT_SECRET as string, {
-      expiresIn: "1h",
+    const accessToken = jwt.sign({ id: user?._id }, process.env.JWT_SECRET as string, {
+      expiresIn: JWT_ACCESS_EXPIRATION,
     });
-    res.status(200).json({
+
+    const refreshToken = jwt.sign({ id: user?._id }, process.env.JWT_SECRET as string, {
+      expiresIn: JWT_REFRESH_EXPIRATION,
+    });
+
+    // Token an den User senden
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 1 * 60 * 60 * 1000, // 1 hour
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: remeberMe ? 7 * 24 * 60 * 60 * 1000 : 0, // 7 days or instant dead
+    });
+
+    res.json({
       message: "Login successful",
-      token,
+      user: { id: user?._id, email: user?.email, username: user?.username },
+      token: accessToken,
     });
+  } catch (error) {
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+/**
+ * @desc Refresh the token
+ * @route POST /user/refresh
+ * @info besonderheit: die Id ist nicht notwendig, weil sie im Token ist => diese trotzdem nochmal abzufragen wäre ineffizient
+ */
+
+export const refreshToken = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      res.status(401).json({ message: "No refresh token provided" });
+      return;
+    }
+
+    // token secure
+
+    jwt.verify(refreshToken, process.env.JWT_SECRET as string, (err: any, decoded: any) => {
+      if (err) {
+        res.status(403).json({ message: "No Token provided" });
+        return;
+      }
+
+      const accessToken = jwt.sign({ id: (decoded as { id: string }).id }, process.env.JWT_SECRET as string, {
+        expiresIn: JWT_ACCESS_EXPIRATION,
+      });
+
+      res.json({ accessToken });
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+/**
+ * @desc Logout a user
+ * @route POST /user/logout
+ */
+
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
+    res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
   }
@@ -198,7 +272,7 @@ export const restore = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (user.deleted?.isDeleted === false) {
+    if (!user.deleted?.isDeleted) {
       res.status(400).json({ message: "Restore Request failed, user isnt deleted." });
       return;
     }
