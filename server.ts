@@ -6,7 +6,6 @@ import cookieParser from "cookie-parser";
 
 import "./src/config/connect.ts";
 import routes from "./src/routes/index.ts";
-import userRouter from "./src/routes/userRouter.ts";
 
 const Limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -32,8 +31,6 @@ app.get("/", (_, res) => {
 });
 
 app.use("/api", routes);
-
-// app.use("/user", userRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -9,7 +9,7 @@ const cartSchema = new Schema(
     },
     items: [
       {
-        product: {
+        productId: {
           type: Types.ObjectId,
           ref: "Product", // Verweis auf ein Produkt
           required: true,

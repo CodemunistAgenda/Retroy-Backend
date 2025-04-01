@@ -1,18 +1,2 @@
-import { Router } from "express";
-
-import { register, login, deleteUser, restore } from "../controllers/userController.ts";
-import { verifyUser } from "../controllers/verifyUser.ts";
-
-const userRouter = Router();
-
-userRouter
-  .get("/", (_, res) => {
-    res.send("Hello from user router");
-  })
-  .post("/register", register)
-  .post("/login", login)
-  .get("/verify", verifyUser)
-  .post("/delete/:id", deleteUser)
-  .post("/restore/:id", restore);
-
-export default userRouter;
+/* das ist ein Admin router, wird später implementiert */
+/* this is an admin router, will be implemented later */
