@@ -14,7 +14,7 @@ export const sendVerficationEmail = async (email: string, token: string) => {
     to: email,
     subject: "Welcome to Retroy, please verify your email",
     // beachte das hier die URL geändert werden
-    text: `Click the link below, to become a verfied user of Retroy:\n\nhttp://localhost:${process.env.PORT}/user/verify?token=${token}`,
+    text: `Click the link below, to become a verfied user of Retroy:\n\nhttp://localhost:${process.env.PORT}/api/auth/verify?token=${token}`,
   };
 
   try {
