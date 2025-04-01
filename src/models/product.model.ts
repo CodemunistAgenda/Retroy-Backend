@@ -1,5 +1,7 @@
 import { Schema, model } from "mongoose";
 
+import { onlyLetters as names, letterAndPunctuation as description } from "../utils/regex";
+
 const productSchema = new Schema(
   {
     title: {
@@ -7,10 +9,24 @@ const productSchema = new Schema(
       required: true,
       trim: true,
       minLength: 2,
+      validator: {
+        validator: function (val: string) {
+          return names.test(val);
+        },
+        message: (props: { value: string }) => `${props.value} is not a valid title!`,
+      },
     },
     description: {
       type: String,
       trim: true,
+      minLength: 10,
+      maxLength: 500,
+      validator: {
+        validator: function (val: string) {
+          return description.test(val);
+        },
+        message: (props: { value: string }) => `${props.value} is not a valid description!`,
+      },
     },
     price: {
       type: Number,
@@ -22,11 +38,24 @@ const productSchema = new Schema(
       default: 1,
       min: 0,
     },
+    color: {
+      type: String,
+      required: true,
+      trim: true,
+      validator: {
+        validator: function (val: string) {
+          return names.test(val);
+        },
+        message: (props: { value: string }) => `${props.value} is not a valid color!`,
+      },
+    },
     category: {
       type: String,
       required: true,
+      trim: true,
+      // TODO: add enum for categories
     },
-    images: [String], 
+    images: [String],
     isPublished: {
       type: Boolean,
       default: true,
