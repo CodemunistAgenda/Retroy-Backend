@@ -50,6 +50,14 @@ const userSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Profil",
   },
+  address: {
+    type: Schema.Types.ObjectId,
+    ref: "Address",
+  },
+  payment: {
+    type: Schema.Types.ObjectId,
+    ref: "Payment",
+  },
 });
 
 export default model("User", userSchema);

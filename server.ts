@@ -33,7 +33,7 @@ app.get("/", (_, res) => {
 
 app.use("/api", routes);
 
-app.use("/user", userRouter);
+// app.use("/user", userRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
