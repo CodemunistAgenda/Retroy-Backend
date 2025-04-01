@@ -9,7 +9,7 @@ interface AuthRequest extends Request {
   };
 }
 
-export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
 
   if (!token) res.status(401).json({ message: "Bitte loggen Sie sich ein" });
@@ -25,16 +25,22 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     const user = await User.findById(decoded.id);
     if (!user) {
       res.status(401).json({ message: "User not Found" });
+      return;
     }
 
     next();
   } catch (err) {
     if (err instanceof jwt.JsonWebTokenError) {
       res.status(401).json({ message: "Invalid token" });
+      return;
     } else if (err instanceof jwt.TokenExpiredError) {
       res.status(401).json({ message: "Token expired" });
+      return;
     } else {
       res.status(500).json({ message: "Internal server error" });
+      return;
     }
   }
 };
+
+export default authMiddleware;
