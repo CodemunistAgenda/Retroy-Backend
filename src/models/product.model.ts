@@ -56,6 +56,22 @@ const productSchema = new Schema(
       // TODO: add enum for categories
     },
     images: [String],
+    mainCategory: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    collectionName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    subCollectionName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     isPublished: {
       type: Boolean,
       default: true,
