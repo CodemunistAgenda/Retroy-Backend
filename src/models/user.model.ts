@@ -15,7 +15,6 @@ const userSchema = new Schema({
       message: "Invalid username",
     },
   },
-
   email: {
     type: String,
     required: true,
@@ -45,6 +44,27 @@ const userSchema = new Schema({
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
     reason: { type: String, default: null },
+  },
+  cart: {
+    type: Schema.Types.ObjectId,
+    ref: "Cart",
+  },
+  orders: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Order",
+    },
+  ],
+  favorites: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Product",
+    },
+  ],
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user",
   },
   profil: {
     type: Schema.Types.ObjectId,
