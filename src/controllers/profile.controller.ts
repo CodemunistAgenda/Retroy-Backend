@@ -5,6 +5,7 @@ import Address from "../models/address.model.ts";
 import Profil from "../models/personalData.model.ts";
 import Payment from "../models/payment.model.ts";
 import User from "../models/user.model.ts";
+import { humanVerification } from "../middleware/reCaptcha.ts";
 
 /**
  * @desc create new profile
@@ -18,7 +19,15 @@ interface ProfileRequest extends Request {
 }
 
 export const createProfile = async (req: ProfileRequest, res: Response): Promise<void> => {
+  const VERIFYING = process.env.VERIFYING;
+
   try {
+    const isHuman = VERIFYING === "true" ? await humanVerification(req.body.captchaToken) : true;
+    if (!isHuman) {
+      res.status(400).json({ message: "Captcha verification failed" });
+      return;
+    }
+
     const userId = req.user?.id; // ID from the token
     const { password, ...body } = req.body;
 

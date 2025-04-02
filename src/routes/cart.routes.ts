@@ -11,7 +11,7 @@ import {
 const router = Router();
 
 router
-  .get("/:Id", getUserCart)
+  .get("/:id", getUserCart)
   .post("/add/:id", addToCart)
   .patch("/increase/:productId", increaseQuantity)
   .patch("/decrease/:productId", decreaseQuantity)

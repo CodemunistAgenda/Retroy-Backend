@@ -4,13 +4,16 @@ import Cart from "../models/cart.model.ts";
 import Product from "../models/product.model.ts";
 
 export const getUserCart = async (req: Request, res: Response): Promise<void> => {
+  console.log("getUserCart");
+  console.log(req.params);
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.params.id;
 
     if (!userId) {
       res.status(400).json({ message: "User ID is required" });
       return;
     }
+    console.log("userId", userId);
 
     const cart = await Cart.findOne({ user: userId }).populate("items.productId");
 

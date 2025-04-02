@@ -19,6 +19,7 @@ const productSchema = new Schema(
     description: {
       type: String,
       trim: true,
+      required: true,
       minLength: 10,
       maxLength: 500,
       validator: {
@@ -55,7 +56,11 @@ const productSchema = new Schema(
       trim: true,
       // TODO: add enum for categories
     },
-    images: [String],
+    images: {
+      type: [String],
+      required: true,
+      // genauer validator muss noch hinzugefügt werden
+    },
     mainCategory: {
       type: String,
       required: true,

@@ -5,8 +5,11 @@ import jwt from "jsonwebtoken";
 import zxcvbn from "zxcvbn";
 
 import User from "../models/user.model.ts";
+import Cart from "../models/cart.model.ts";
+
 import { blacklistedMails } from "../utils/tempmailing.ts";
 import { sendVerficationEmail } from "../middleware/sendingMails.ts";
+import { humanVerification } from "../middleware/reCaptcha.ts";
 
 const JWT_ACCESS_EXPIRATION = "1h"; // JWT expiration time
 const JWT_REFRESH_EXPIRATION = "7d";
@@ -17,12 +20,20 @@ const JWT_REFRESH_EXPIRATION = "7d";
  */
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-  let { email, password, username } = req.body;
+  let { email, password, username, captchaToken } = req.body;
   email = validator.escape(email);
   password = validator.escape(password);
   username = validator.escape(username);
 
+  const VERIFYING = process.env.VERIFYING;
+
   try {
+    const isHuman = VERIFYING === "true" ? await humanVerification(captchaToken) : true;
+    if (!isHuman) {
+      res.status(400).json({ message: "Captcha verification failed" });
+      return;
+    }
+
     if (!email || !password || !username) {
       res.status(400).json({ message: "Please fill all fields" });
       return;
@@ -65,15 +76,39 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       username: username,
     });
 
-    const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET as string, {
-      expiresIn: "1h",
+    const cart = new Cart({
+      user: newUser._id,
+      items: [],
     });
 
-    await sendVerficationEmail(email, verificationToken);
+    newUser.cart = cart._id;
+
+    if (VERIFYING === "true") {
+      const verificationToken = jwt.sign({ email }, process.env.JWT_SECRET as string, {
+        expiresIn: "1h",
+      });
+
+      await sendVerficationEmail(email, verificationToken);
+    }
+
     await newUser.save();
+    await cart.save();
+
+    // log the user in automatically
+    const accessToken = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET as string, {
+      expiresIn: JWT_ACCESS_EXPIRATION,
+    });
+
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true, // ist nicht per JS zugänglich (document.cookie)
+      secure: process.env.NODE_ENV === "production", // wenn true, dann wird der cookie nur über HTTPS gesendet
+      sameSite: "strict", //
+      maxAge: 1 * 60 * 60 * 1000, // 1 hour
+    });
 
     res.status(201).json({
       message: "User registered successfully",
+      accessToken,
     });
   } catch (err) {
     console.log(err);
@@ -89,10 +124,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     let { email, username, password, remeberMe } = req.body;
-
-    email = validator.escape(email);
-    username = validator.escape(username);
-    password = validator.escape(password);
+    email !== undefined ? validator.escape(email) : email;
+    username !== undefined ? validator.escape(username) : username;
+    password !== undefined ? validator.escape(password) : password;
 
     if (!password) {
       res.status(400).json({ message: "Enter a password!" });
@@ -163,7 +197,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       token: accessToken,
     });
   } catch (error) {
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error while login", error });
   }
 };
 
@@ -197,7 +231,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       res.json({ accessToken });
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error while refresh", err });
   }
 };
 
@@ -224,11 +258,20 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 */
 
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
-  try {
-    let userId = req.params.id;
-    userId = validator.escape(userId);
+  const VERIFYING = process.env.VERIFYING;
 
-    const { reason } = req.body;
+  try {
+    const isHuman = VERIFYING === "true" ? await humanVerification(req.body.captchaToken) : true;
+    if (!isHuman) {
+      res.status(400).json({ message: "Captcha verification failed" });
+      return;
+    }
+
+    let userId = req.params.id;
+    userId = validator.escape(userId as string);
+
+    let { reason } = req.body;
+    reason = validator.escape(reason as string);
 
     if (!userId) {
       res.status(400).json({ message: "User ID is required" });
@@ -267,7 +310,8 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 
 export const restore = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.params.id;
+    let userId = req.params.id;
+    userId = validator.escape(userId as string);
 
     if (!userId) {
       res.status(400).json({ message: "User ID is required" });

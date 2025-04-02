@@ -30,11 +30,11 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
 
     next();
   } catch (err) {
-    if (err instanceof jwt.JsonWebTokenError) {
-      res.status(401).json({ message: "Invalid token" });
+    if (err instanceof jwt.TokenExpiredError) {
+      res.status(401).json({ message: "Bitte melden sie sicher erneut an" });
       return;
-    } else if (err instanceof jwt.TokenExpiredError) {
-      res.status(401).json({ message: "Token expired" });
+    } else if (err instanceof jwt.JsonWebTokenError) {
+      res.status(401).json({ message: "Invalid token" });
       return;
     } else {
       res.status(500).json({ message: "Internal server error" });

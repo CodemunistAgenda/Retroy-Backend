@@ -1,32 +1,72 @@
 import Product from "../models/product.model";
 import { type Request, type Response } from "express";
 
-export const createProduct = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const product = await Product.create(req.body);
-    res.status(201).json(product);
-  } catch (error) {
-    res.status(500).json({ message: "Produkt konnte nicht erstellt werden.", error });
-  }
-};
+interface productData {
+  title: string;
+  description: string;
+  price: number;
+  stock: number;
+  color: string;
+  category: string;
+  images: string[];
+  mainCategory: string;
+  collectionName: string;
+  subCollectionName: string;
+  isPublished: boolean;
+}
 
 export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const products = await Product.find();
+    const products: productData[] = await Product.find();
+
+    if (!products || products.length === 0) {
+      res.status(404).json({ message: "Keine Produkte gefunden." });
+      return;
+    }
+
     res.status(200).json(products);
   } catch (error) {
     res.status(500).json({ message: "Produkte konnten nicht geladen werden.", error });
   }
 };
 
-export const getProductById = async (req: Request, res: Response): Promise<void> => {
+/**
+ *
+ * @warning This Route must be protected, in Production everyone can create a product
+ */
+export const createProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      res.status(404).json({ message: "Produkt nicht gefunden." });
+    const product: productData = req.body;
+
+    const newProduct = new Product({
+      title: product.title,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      color: product.color,
+      category: product.category,
+      images: product.images,
+      mainCategory: product.mainCategory,
+      collectionName: product.collectionName,
+      subCollectionName: product.subCollectionName,
+      isPublished: product.isPublished,
+    });
+
+    const savedProduct = await newProduct.save();
+    if (!savedProduct) {
+      res.status(400).json({ message: "Produkt konnte nicht gespeichert werden." });
       return;
     }
-    res.status(200).json(product);
+    res.status(201).json({ message: "Neues Produkt erstellt", savedProduct });
+  } catch (error) {
+    res.status(500).json({ message: "Produkt konnte nicht erstellt werden.", error });
+  }
+};
+
+export const getProductById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const product: productData = req.body.product;
+    res.status(200).json({ message: "Product found by id: ", product });
   } catch (error) {
     res.status(500).json({ message: "Fehler beim Laden des Produkts.", error });
   }
@@ -34,12 +74,27 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
 
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updated) {
-      res.status(404).json({ message: "Produkt nicht gefunden." });
-      return;
-    }
-    res.status(200).json(updated);
+    const product: productData = req.body;
+    const id = req.params.id;
+
+    const updatedProduct = {
+      _id: id,
+      title: product.title,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      color: product.color,
+      category: product.category,
+      images: product.images,
+      mainCategory: product.mainCategory,
+      collectionName: product.collectionName,
+      subCollectionName: product.subCollectionName,
+      isPublished: product.isPublished,
+    };
+
+    await Product.findByIdAndUpdate(id, updatedProduct, { new: true });
+
+    res.status(200).json({ message: "Produkt wurde aktualisiert.", product: updatedProduct });
   } catch (error) {
     res.status(500).json({ message: "Produkt konnte nicht aktualisiert werden.", error });
   }
@@ -47,6 +102,13 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
 
 export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
   try {
+    const id = req.params.id;
+
+    if (!id) {
+      res.status(400).json({ message: "Produkt ID ist erforderlich." });
+      return;
+    }
+
     const deleted = await Product.findByIdAndDelete(req.params.id);
     if (!deleted) {
       res.status(404).json({ message: "Produkt nicht gefunden." });
