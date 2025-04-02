@@ -1,6 +1,6 @@
 import { type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
-import Validator from "validator";
+import validator, { escape } from "validator";
 import jwt from "jsonwebtoken";
 import zxcvbn from "zxcvbn";
 
@@ -17,7 +17,10 @@ const JWT_REFRESH_EXPIRATION = "7d";
  */
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-  const { email, password, username } = req.body;
+  let { email, password, username } = req.body;
+  email = validator.escape(email);
+  password = validator.escape(password);
+  username = validator.escape(username);
 
   try {
     if (!email || !password || !username) {
@@ -25,7 +28,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (!Validator.isEmail(email)) {
+    if (!validator.isEmail(email)) {
       res.status(400).json({ message: "Invalid email" });
       return;
     }
@@ -50,7 +53,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, Number(process.env.SALT_ROUNDS));
     if (!hashedPassword) {
       res.status(500).json({ message: "Error hashing password" });
       return;
@@ -85,7 +88,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, username, password, remeberMe } = req.body;
+    let { email, username, password, remeberMe } = req.body;
+
+    email = validator.escape(email);
+    username = validator.escape(username);
+    password = validator.escape(password);
 
     if (!password) {
       res.status(400).json({ message: "Enter a password!" });
@@ -99,7 +106,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     let user;
 
     if (email) {
-      if (!Validator.isEmail(email)) {
+      if (!validator.isEmail(email)) {
         res.status(400).json({ message: "Invalid email" });
         return;
       }
@@ -109,7 +116,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         return;
       }
     } else if (username) {
-      if (!Validator.isAlphanumeric(username)) {
+      if (!validator.isAlphanumeric(username)) {
         res.status(401).json({ message: "Invalid username" });
         return;
       }
@@ -218,7 +225,9 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.params.id;
+    let userId = req.params.id;
+    userId = validator.escape(userId);
+
     const { reason } = req.body;
 
     if (!userId) {
