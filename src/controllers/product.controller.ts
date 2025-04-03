@@ -81,29 +81,18 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
   }
 };
 
-export const updateProduct = async (req: Request, res: Response): Promise<void> => {
+export const updateProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const product: productData = req.body;
     const id = req.params.id;
+    const exsitingProduct = await Product.findById(id);
 
-    const updatedProduct = {
-      _id: id,
-      title: product.title,
-      description: product.description,
-      price: product.price,
-      stock: product.stock,
-      color: product.color,
-      category: product.category,
-      images: product.images,
-      mainCategory: product.mainCategory,
-      collectionName: product.collectionName,
-      subCollectionName: product.subCollectionName,
-      isPublished: product.isPublished,
-    };
+    if (exsitingProduct?.salesperson.toString() !== req.user?.id) {
+      res.status(403).json({ message: "Sie sind nicht berechtigt, dieses Produkt zu aktualisieren." });
+      return;
+    }
+    await Product.findByIdAndUpdate(id, req.body, { new: true });
 
-    await Product.findByIdAndUpdate(id, updatedProduct, { new: true });
-
-    res.status(200).json({ message: "Produkt wurde aktualisiert.", product: updatedProduct });
+    res.status(200).json({ message: "Produkt wurde aktualisiert.", product: req.body });
   } catch (error) {
     res.status(500).json({ message: "Produkt konnte nicht aktualisiert werden.", error });
   }
