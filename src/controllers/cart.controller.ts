@@ -3,11 +3,22 @@ import { type Request, type Response } from "express";
 import Cart from "../models/cart.model.ts";
 import Product from "../models/product.model.ts";
 
-export const getUserCart = async (req: Request, res: Response): Promise<void> => {
-  console.log("getUserCart");
-  console.log(req.params);
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+  };
+}
+
+interface CartItem {
+  _id: string;
+  quantity: number;
+  priceAtAddition: number;
+  totalPriceAtAddition: number;
+}
+
+export const getUserCart = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.params.id;
+    const userId = req.user?.id;
 
     if (!userId) {
       res.status(400).json({ message: "User ID is required" });
@@ -15,7 +26,7 @@ export const getUserCart = async (req: Request, res: Response): Promise<void> =>
     }
     console.log("userId", userId);
 
-    const cart = await Cart.findOne({ user: userId }).populate("items.productId");
+    const cart = await Cart.findOne({ user: userId }).populate("items.product");
 
     if (!cart) {
       const newCart = new Cart({ userId, items: [] });
@@ -26,7 +37,7 @@ export const getUserCart = async (req: Request, res: Response): Promise<void> =>
     let totalPrice = 0;
     if (cart.items.length !== 0) {
       totalPrice = cart.items.reduce((total, item) => {
-        return total + item.quantity * (item.productId ? item.priceAtAddition : 0);
+        return total + item.quantity * (item.product ? item.priceAtAddition : 0);
       }, 0);
     }
 
@@ -43,9 +54,10 @@ export const getUserCart = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const addToCart = async (req: Request, res: Response): Promise<void> => {
+export const addToCart = async (req: AuthRequest, res: Response): Promise<void> => {
+  console.log("addToCart");
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       res.status(400).json({ message: "User ID is required" });
       return;
@@ -58,6 +70,7 @@ export const addToCart = async (req: Request, res: Response): Promise<void> => {
     }
 
     const product = await Product.findById(productId);
+    console.log("product", product);
     if (!product) {
       res.status(404).json({ message: "Product not found" });
       return;
@@ -70,23 +83,25 @@ export const addToCart = async (req: Request, res: Response): Promise<void> => {
 
     const priceNow = product.price;
 
-    let cart = await Cart.findOne({ userId });
+    let cart = await Cart.findOne({ user: userId });
+    console.log("cart", cart);
     if (!cart) {
       cart = new Cart({ userId, items: [] });
     }
 
-    const existingItem = cart.items.findIndex((item) => item.productId.toString() === productId);
+    const existingItem = cart.items.findIndex((item) => item.product.toString() === productId);
 
     if (existingItem > -1 && cart.items[existingItem]) {
       cart.items[existingItem].quantity += quantity;
     } else {
-      cart.items.push({ productId, quantity, priceAtAddition: priceNow, totalPriceAtAddition: priceNow * quantity });
+      cart.items.push({ product, quantity, priceAtAddition: priceNow, totalPriceAtAddition: priceNow * quantity });
     }
 
     cart.totalPrice = cart.items.reduce((total, item) => {
       return total + item.quantity * item.priceAtAddition;
     }, 0);
 
+    cart.totalPrice = parseFloat(cart.totalPrice.toFixed(2));
     await cart.save();
 
     res.status(201).json({
@@ -94,47 +109,49 @@ export const addToCart = async (req: Request, res: Response): Promise<void> => {
       cart,
     });
   } catch (error) {
-    res.status(500).json({ message: "Fehler beim Hinzufügen zum Warenkorb" });
+    res.status(500).json({ message: "Fehler beim Hinzufügen zum Warenkorb", error });
   }
 };
 
-export const increaseQuantity = async (req: Request, res: Response): Promise<void> => {
+export const increaseQuantity = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       res.status(400).json({ message: "User ID is required" });
       return;
     }
 
     const { productId } = req.params;
-
+    console.log("productId", productId);
     if (!productId) {
       res.status(400).json({ message: "Product ID is required" });
       return;
     }
 
-    const cart = await Cart.findOne({ userId }).populate("items.productId");
+    const cart = await Cart.findOne({ user: userId }).populate("items.product");
 
     if (!cart) {
       res.status(404).json({ message: "Cart not found" });
       return;
     }
 
-    const itemIndex = cart.items.findIndex((item) => item.productId.toString() === productId);
+    const itemIndex = cart.items.findIndex((item) => (item.product as CartItem)._id.toString() === productId);
+    console.log(cart.items);
+    console.log("itemIndex", itemIndex);
 
     if (itemIndex === -1) {
       res.status(404).json({ message: "Item not found in cart" });
       return;
     }
     if (cart.items[itemIndex] !== undefined) {
-      if (cart.items[itemIndex].quantity >= (cart.items[itemIndex].productId as any).stock) {
+      if (cart.items[itemIndex].quantity >= (cart.items[itemIndex].product as any).stock) {
         res.status(400).json({ message: "Cannot increase quantity beyond stock" });
         return;
       }
 
       cart.items[itemIndex].quantity += 1;
       cart.items[itemIndex].priceAtAddition =
-        cart.items[itemIndex].quantity * (cart.items[itemIndex].productId as any).price;
+        cart.items[itemIndex].quantity * (cart.items[itemIndex].product as any).price;
 
       cart.totalPrice = cart.items.reduce((total, item) => {
         return total + item.quantity * item.priceAtAddition;
@@ -167,13 +184,13 @@ export const decreaseQuantity = async (req: Request, res: Response): Promise<voi
       return;
     }
 
-    const cart = await Cart.findOne({ user }).populate("items.productId");
+    const cart = await Cart.findOne({ user }).populate("items.product");
     if (!cart || cart.items.length === 0) {
       res.status(404).json({ message: "Cart not found or empty" });
       return;
     }
 
-    const itemIndex = cart.items.findIndex((item) => item.productId.toString() === productId);
+    const itemIndex = cart.items.findIndex((item) => (item.product as CartItem)._id.toString() === productId);
     if (itemIndex === -1) {
       res.status(404).json({ message: "Item not found in cart" });
       return;
@@ -214,12 +231,12 @@ export const removeFromCart = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const cart = await Cart.findOne({ user }).populate("items.productId");
+    const cart = await Cart.findOne({ user }).populate("items.product");
     if (!cart || cart.items.length === 0) {
       res.status(404).json({ message: "Cart not found or empty" });
       return;
     }
-    const itemIndex = cart.items.findIndex((item) => item.productId.toString() === productId);
+    const itemIndex = cart.items.findIndex((item) => (item.product as CartItem)._id.toString() === productId);
     if (itemIndex === -1) {
       res.status(404).json({ message: "Item not found in cart" });
       return;

@@ -8,14 +8,17 @@ import {
   clearCart,
 } from "../controllers/cart.controller";
 
+import protect from "../middleware/jwtAuth.ts";
+
 const router = Router();
 
 router
+  .use(protect)
   .get("/:id", getUserCart)
-  .post("/add/:id", addToCart)
+  .post("/add", addToCart)
   .patch("/increase/:productId", increaseQuantity)
   .patch("/decrease/:productId", decreaseQuantity)
   .delete("/remove/:productId", removeFromCart)
-  .delete("/clear/:userId", clearCart);
+  .delete("/clear", clearCart);
 
 export default router;
