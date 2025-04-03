@@ -3,6 +3,7 @@ import { type Request, type Response } from "express";
 
 /**
  * @desc Bestellung erstellen
+ * @route POST /api/orders
  */
 
 export const createOrder = async (req: Request, res: Response): Promise<void> => {

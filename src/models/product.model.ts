@@ -19,6 +19,7 @@ const productSchema = new Schema(
     description: {
       type: String,
       trim: true,
+      required: true,
       minLength: 10,
       maxLength: 500,
       validator: {
@@ -55,23 +56,31 @@ const productSchema = new Schema(
       trim: true,
       // TODO: add enum for categories
     },
-    images: [String],
+    images: {
+      type: [String],
+      required: true,
+      // genauer validator muss noch hinzugefügt werden
+    },
     mainCategory: {
       type: String,
       required: true,
       trim: true,
     },
-    collectionName:{
+    collectionName: {
       type: String,
       required: true,
       trim: true,
     },
-    subCollectionName:{
+    subCollectionName: {
       type: String,
       required: true,
       trim: true,
     },
-
+    salesperson: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     isPublished: {
       type: Boolean,
       default: true,
