@@ -76,7 +76,11 @@ const productSchema = new Schema(
       required: true,
       trim: true,
     },
-
+    salesperson: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     isPublished: {
       type: Boolean,
       default: true,

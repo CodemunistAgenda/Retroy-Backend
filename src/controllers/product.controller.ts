@@ -1,6 +1,12 @@
 import Product from "../models/product.model";
 import { type Request, type Response } from "express";
 
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+  };
+}
+
 interface productData {
   title: string;
   description: string;
@@ -34,9 +40,11 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
  *
  * @warning This Route must be protected, in Production everyone can create a product
  */
-export const createProduct = async (req: Request, res: Response): Promise<void> => {
+export const createProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const product: productData = req.body;
+    const salesperson = req.user?.id;
+    console.log("Salesperson ID: ", req.user?.id);
 
     const newProduct = new Product({
       title: product.title,
@@ -49,6 +57,7 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
       mainCategory: product.mainCategory,
       collectionName: product.collectionName,
       subCollectionName: product.subCollectionName,
+      salesperson: salesperson,
       isPublished: product.isPublished,
     });
 
