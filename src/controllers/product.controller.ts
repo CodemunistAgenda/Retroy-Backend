@@ -15,6 +15,13 @@ interface productData {
   color: string;
   category: string;
   images: string[];
+  weight: number;
+  dimensions: {
+    width: number;
+    height: number;
+    depth: number;
+  };
+  salesperson: string;
   mainCategory: string;
   collectionName: string;
   subCollectionName: string;
@@ -53,6 +60,8 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       stock: product.stock,
       color: product.color,
       category: product.category,
+      weight: product.weight,
+      dimensions: product.dimensions,
       images: product.images,
       mainCategory: product.mainCategory,
       collectionName: product.collectionName,

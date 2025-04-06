@@ -61,6 +61,34 @@ const productSchema = new Schema(
       required: true,
       // genauer validator muss noch hinzugefügt werden
     },
+    weight: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    dimensions: {
+      type: {
+        width: { type: Number, required: true, min: 0 },
+        height: { type: Number, required: true, min: 0 },
+        depth: { type: Number, required: true, min: 0 },
+      },
+      required: true,
+      validate: {
+        validator: function (val: { width: number; height: number; depth: number }) {
+          return (
+            val &&
+            typeof val.width === "number" &&
+            val.width > 0 &&
+            typeof val.height === "number" &&
+            val.height > 0 &&
+            typeof val.depth === "number" &&
+            val.depth > 0
+          );
+        },
+        message: (props: { value: { width: number; height: number; depth: number } }) =>
+          `Invalid dimensions: width (${props.value.width}), height (${props.value.height}), depth (${props.value.depth}) must all be positive numbers.`,
+      },
+    },
     mainCategory: {
       type: String,
       required: true,
