@@ -2,7 +2,9 @@ import nodemailer from "nodemailer";
 
 export const sendVerficationEmail = async (email: string, token: string) => {
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.hostinger.com",
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.ADMIN_EMAIL,
       pass: process.env.ADMIN_PASSWORD,

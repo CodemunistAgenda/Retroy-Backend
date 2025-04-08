@@ -29,7 +29,7 @@ export const getUserCart = async (req: AuthRequest, res: Response): Promise<void
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
 
     if (!cart) {
-      const newCart = new Cart({ userId, items: [] });
+      const newCart = new Cart({ user: userId, items: [] });
       await newCart.save();
       res.status(201).json(newCart);
       return;
@@ -84,8 +84,10 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
 
     let cart = await Cart.findOne({ user: userId });
     console.log("cart", cart);
+
+   
     if (!cart) {
-      cart = new Cart({ userId, items: [] });
+      cart = new Cart({ user: userId, items: [] }); 
     }
 
     const existingItem = cart.items.findIndex((item) => item.product.toString() === productId);
@@ -93,7 +95,12 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
     if (existingItem > -1 && cart.items[existingItem]) {
       cart.items[existingItem].quantity += quantity;
     } else {
-      cart.items.push({ product, quantity, priceAtAddition: priceNow, totalPriceAtAddition: priceNow * quantity });
+      cart.items.push({
+        product: productId, 
+        quantity,
+        priceAtAddition: priceNow,
+        totalPriceAtAddition: priceNow * quantity,
+      });
     }
 
     cart.totalPrice = cart.items.reduce((total, item) => {
@@ -108,7 +115,10 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
       cart,
     });
   } catch (error) {
-    res.status(500).json({ message: "Fehler beim Hinzufügen zum Warenkorb", error });
+    res.status(500).json({
+      message: "Fehler beim Hinzufügen zum Warenkorb",
+      error: error instanceof Error ? error.message : error,
+    });
   }
 };
 
