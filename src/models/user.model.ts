@@ -44,6 +44,7 @@ const userSchema = new Schema({
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
     reason: { type: String, default: null },
+    deletedBy: { type: String, default: null },
   },
   cart: {
     type: Schema.Types.ObjectId,

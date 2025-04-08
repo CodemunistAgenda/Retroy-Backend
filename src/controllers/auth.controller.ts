@@ -61,9 +61,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const passwordStrength = zxcvbn(password);
     if (passwordStrength.score < 3) {
-      res.status(400).json({
-        message: passwordStrength.feedback.suggestions.join(" "),
-      });
+      let message = passwordStrength.feedback.suggestions.join(" ");
+      if (!validator.isLength(password, { min: 12 })) {
+        message += " Password should be at least 12 characters long.";
+      }
+      res.status(400).json({ message });
       return;
     }
 
@@ -112,12 +114,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       message: "User registered successfully",
       accessToken,
     });
-  } catch (err) {
+  } catch (err: any) {
     console.log(err);
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ error: { message: "Server Error", details: err.message } });
   }
 };
-
 
 /**
  * @desc Login a user
@@ -222,8 +223,8 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
     // token secure
 
     jwt.verify(refreshToken, process.env.JWT_SECRET as string, (err: any, decoded: any) => {
-      if (err) {
-        res.status(403).json({ message: "No Token provided" });
+      if (err || !decoded || decoded.exp < Date.now() / 1000) {
+        res.status(403).json({ message: "No Token provided or invalid" });
         return;
       }
 
@@ -249,8 +250,8 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
     res.clearCookie("refreshToken");
 
     res.status(200).json({ message: "Logout successful" });
-  } catch (error) {
-    res.status(500).json({ message: "Server Error" });
+  } catch (err: any) {
+    res.status(500).json({ error: { message: "Server Error while logout", details: err.message } });
   }
 };
 
@@ -297,6 +298,7 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
       isDeleted: true,
       deletedAt: new Date(),
       reason: reason || "No reason provided",
+      deletedBy: (req as any).user?.id,
     };
 
     await user.save();
@@ -337,6 +339,7 @@ export const restore = async (req: Request, res: Response): Promise<void> => {
       isDeleted: false,
       deletedAt: null as unknown as Date,
       reason: null as unknown as string,
+      deletedBy: null as unknown as string,
     };
 
     await user.save();
