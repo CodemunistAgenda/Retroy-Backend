@@ -14,6 +14,12 @@ import { humanVerification } from "../middleware/reCaptcha.ts";
 const JWT_ACCESS_EXPIRATION = "1h"; // JWT expiration time
 const JWT_REFRESH_EXPIRATION = "7d";
 
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+  };
+}
+
 /**
  * @desc Register a new user, hash the password, and send a verification email
  * @route POST /user/register
@@ -349,9 +355,9 @@ export const restore = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const getCurrentUser = async (req: Request, res: Response): Promise<void> => {
+export const getCurrentUser = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
       res.status(401).json({ message: "Nicht authentifiziert" });
