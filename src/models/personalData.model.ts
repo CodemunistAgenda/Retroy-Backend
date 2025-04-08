@@ -1,7 +1,7 @@
 import { Schema, model, Types } from "mongoose";
 import "dotenv/config.js";
 
-import { encryptData, decryptData } from "../utils/helper.js";
+import { encryptData, decryptData } from "../utils/encription.helper.js";
 import { onlyLetters as names, telNumber } from "../utils/regex.js";
 
 const personalInfoSchema = new Schema({

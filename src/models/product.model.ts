@@ -99,6 +99,11 @@ const productSchema = new Schema(
       required: true,
       trim: true,
     },
+    specialDelivery: {
+      type: [String],
+      enum: ["oversize", "danger", "fragile", "none"],
+      default: [],
+    },
     subCollectionName: {
       type: String,
       required: true,

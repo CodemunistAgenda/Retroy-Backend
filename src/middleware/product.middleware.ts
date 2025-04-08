@@ -56,12 +56,35 @@ const validateFields = (data: any, isUpdate = false) => {
       errors.push(`${field} has to be an array of strings`);
     }
   };
+  const valDimensions = (field: string, min: number, max: number) => {
+    if (isUpdate && data[field] === undefined) return;
+
+    ["width", "height", "depth"].forEach((dim) => {
+      const val = data[field][dim];
+      if (val === undefined || typeof val !== "number" || val < min || val > max) {
+        errors.push(`${field}.${dim} has to be a number with a minimum value of ${min} and max of ${max}`);
+      }
+    });
+  };
+  const valSpecialDelivery = (field: string) => {
+    if (data[field] === undefined) return;
+    console.log("specialDelivery: ", data[field]);
+    if (
+      !Array.isArray(data[field]) ||
+      data[field].some((item: any) => typeof item !== "string" || !["oversize", "fragile", "danger"].includes(item))
+    ) {
+      errors.push(`${field} has to be an array of strings with values: oversize, fragile, danger`);
+    }
+  };
 
   valString("title", 2, 50);
   valDesc("description", 2, 500);
   valNum("price", 0, 100000);
   valArr("images");
+  valNum("weight", 0, 100000);
+  valDimensions("dimensions", 0, 10000);
   valNum("stock", 1, 10000);
+  valSpecialDelivery("specialDelivery");
   valString("color", 2, 20);
   valString("category", 2, 20);
   valString("mainCategory", 2, 20);

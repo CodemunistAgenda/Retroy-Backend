@@ -6,23 +6,61 @@ import { type Request, type Response } from "express";
  * @route POST /api/orders
  */
 
-export const createOrder = async (req: Request, res: Response): Promise<void> => {
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+  };
+}
+
+export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const order = await Order.create(req.body);
-    res.status(201).json(order);
+    const id = req.user?.id;
+    const {
+      cart,
+      billingAddress,
+      shippingAddress,
+      shippingMethod,
+      totalAmount,
+      taxAmount,
+      shippingCost,
+      finalAmount,
+      orderSpecials,
+      specialTotal,
+    } = req.body;
+
+    // console.log("createOrder", req.body);
+    console.log("billingAddress", billingAddress);
+
+    const newOrder = new Order({
+      user: id,
+      products: cart.items,
+      billingAddress,
+      shippingAddress,
+      shippingMethod,
+      totalAmount,
+      taxAmount,
+      shippingCost,
+      finalAmount,
+      orderSpecials,
+      specialTotal,
+    });
+
+    await newOrder.save();
+
+    res.status(201).json(newOrder);
   } catch (error) {
     res.status(500).json({ message: "Bestellung konnte nicht erstellt werden.", error });
   }
 };
 
 /**
- *
  * @desc Alle Bestellungen abrufen
+ * @warnging Diese Route sollte nur von Admins und Moderatoren aufgerufen werden können.
  */
 
 export const getAllOrders = async (_: Request, res: Response): Promise<void> => {
   try {
-    const orders = await Order.find().populate("user").populate("products.productId");
+    const orders = await Order.find().populate({ path: "user", select: "username _id" }).populate("products.productId");
     res.status(200).json(orders);
   } catch (error) {
     res.status(500).json({ message: "Bestellungen konnten nicht geladen werden.", error });
@@ -43,6 +81,20 @@ export const getOrderById = async (req: Request, res: Response): Promise<void> =
     res.status(200).json(order);
   } catch (error) {
     res.status(500).json({ message: "Fehler beim Laden der Bestellung.", error });
+  }
+};
+
+export const getAllOrdersOfUser = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const orders = await Order.find({ user: userId }).populate("user").populate("products.productId");
+    if (!orders) {
+      res.status(404).json({ message: "Keine Bestellungen gefunden." });
+      return;
+    }
+    res.status(200).json(orders);
+  } catch (err) {
+    res.status(500).json({ message: "Fehler beim Laden der Bestellungen.", error: err });
   }
 };
 

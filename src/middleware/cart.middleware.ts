@@ -2,18 +2,6 @@ import { type Request, type Response, type NextFunction } from "express";
 import Cart from "../models/cart.model";
 import Product from "../models/product.model";
 
-export const extractUserIdMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  const userId = (req as any).user?.id;
-
-  if (!userId) {
-    res.status(400).json({ message: "User ID is required" });
-    return;
-  }
-
-  req.body.userId = userId;
-  next();
-};
-
 export const findCartMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     let cart = await Cart.findOne({ user: req.body.userId }).populate("items.product");

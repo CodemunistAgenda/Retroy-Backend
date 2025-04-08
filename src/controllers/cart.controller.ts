@@ -55,7 +55,6 @@ export const getUserCart = async (req: AuthRequest, res: Response): Promise<void
 };
 
 export const addToCart = async (req: AuthRequest, res: Response): Promise<void> => {
-  console.log("addToCart");
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -90,7 +89,7 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
     }
 
     const existingItem = cart.items.findIndex((item) => item.product.toString() === productId);
-
+    console.log("product", product);
     if (existingItem > -1 && cart.items[existingItem]) {
       cart.items[existingItem].quantity += quantity;
     } else {

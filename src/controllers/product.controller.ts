@@ -21,6 +21,7 @@ interface productData {
     height: number;
     depth: number;
   };
+  specialDelivery: [string];
   salesperson: string;
   mainCategory: string;
   collectionName: string;
@@ -62,6 +63,7 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       category: product.category,
       weight: product.weight,
       dimensions: product.dimensions,
+      specialDelivery: product.specialDelivery,
       images: product.images,
       mainCategory: product.mainCategory,
       collectionName: product.collectionName,
@@ -89,19 +91,24 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ message: "Fehler beim Laden des Produkts.", error });
   }
 };
+// um die Produkte zu aktualisieren, muss der Salesperson die ID des Produkts haben
 
+/**
+ * @Bug um demensions zu updaten müssen alle werte angegeben werden
+ */
 export const updateProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const id = req.params.id;
     const exsitingProduct = await Product.findById(id);
+    const product: productData = req.body.product;
 
     if (exsitingProduct?.salesperson.toString() !== req.user?.id) {
       res.status(403).json({ message: "Sie sind nicht berechtigt, dieses Produkt zu aktualisieren." });
       return;
     }
-    await Product.findByIdAndUpdate(id, req.body, { new: true });
+    await Product.findByIdAndUpdate(id, product, { new: true });
 
-    res.status(200).json({ message: "Produkt wurde aktualisiert.", product: req.body });
+    res.status(200).json({ message: "Produkt wurde aktualisiert.", product: req.body.product });
   } catch (error) {
     res.status(500).json({ message: "Produkt konnte nicht aktualisiert werden.", error });
   }
