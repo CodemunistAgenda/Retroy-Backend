@@ -267,7 +267,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 
 */
 
-export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+export const deleteUser = async (req: AuthRequest, res: Response): Promise<void> => {
   const VERIFYING = process.env.VERIFYING;
 
   try {
@@ -277,11 +277,16 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    let userId = req.params.id;
+    let userId = req.user?.id;
     userId = validator.escape(userId as string);
 
-    let { reason } = req.body;
+    let { reason, password } = req.body;
     reason = validator.escape(reason as string);
+
+    if (!password) {
+      res.status(400).json({ message: "Please enter your password" });
+      return;
+    }
 
     if (!userId) {
       res.status(400).json({ message: "User ID is required" });
@@ -292,6 +297,12 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 
     if (!user) {
       res.status(404).json({ message: "No user registered with this ID" });
+      return;
+    }
+
+    const pwMatch = await bcrypt.compare(password, user?.password as string);
+    if (!pwMatch) {
+      res.status(400).json({ message: "Password is incorrect" });
       return;
     }
 
