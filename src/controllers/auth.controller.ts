@@ -21,21 +21,24 @@ const JWT_REFRESH_EXPIRATION = "7d";
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   let { email, password, username, captchaToken } = req.body;
-  email = validator.escape(email);
-  password = validator.escape(password);
-  username = validator.escape(username);
 
   const VERIFYING = process.env.VERIFYING;
 
   try {
-    const isHuman = VERIFYING === "true" ? await humanVerification(captchaToken) : true;
-    if (!isHuman) {
-      res.status(400).json({ message: "Captcha verification failed" });
+    // check presence of required fields first!
+    if (!email || !password || !username) {
+      res.status(400).json({ message: "Please fill all fields" });
       return;
     }
 
-    if (!email || !password || !username) {
-      res.status(400).json({ message: "Please fill all fields" });
+    // escape after ensuring fields exist
+    email = validator.escape(email);
+    password = validator.escape(password);
+    username = validator.escape(username);
+
+    const isHuman = VERIFYING === "true" ? await humanVerification(captchaToken) : true;
+    if (!isHuman) {
+      res.status(400).json({ message: "Captcha verification failed" });
       return;
     }
 
@@ -52,7 +55,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      res.status(400).json({ message: "this mail is in use" });
+      res.status(400).json({ message: "This email is already in use" });
       return;
     }
 
@@ -73,7 +76,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const newUser = new User({
       email,
       password: hashedPassword,
-      username: username,
+      username,
     });
 
     const cart = new Cart({
@@ -94,15 +97,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     await newUser.save();
     await cart.save();
 
-    // log the user in automatically
     const accessToken = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET as string, {
       expiresIn: JWT_ACCESS_EXPIRATION,
     });
 
     res.cookie("accessToken", accessToken, {
-      httpOnly: true, // ist nicht per JS zugänglich (document.cookie)
-      secure: process.env.NODE_ENV === "production", // wenn true, dann wird der cookie nur über HTTPS gesendet
-      sameSite: "strict", //
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 1 * 60 * 60 * 1000, // 1 hour
     });
 
@@ -115,6 +117,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
 
 /**
  * @desc Login a user
@@ -340,5 +343,27 @@ export const restore = async (req: Request, res: Response): Promise<void> => {
     res.status(200).json({ message: "User restored successfully" });
   } catch (err) {
     res.status(500).json({ message: "Error restoring user", error: err });
+  }
+};
+
+export const getCurrentUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      res.status(401).json({ message: "Nicht authentifiziert" });
+      return;
+    }
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      res.status(404).json({ message: "Benutzer nicht gefunden" });
+      return;
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Fehler beim Laden des Benutzers", error });
   }
 };
