@@ -9,24 +9,20 @@ interface AuthRequest extends Request {
   };
 }
 
-const authMiddleware = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    console.log("🧩 [Middleware] Authorization Header:", authHeader);
+    console.log("[Middleware] Authorization Header:", authHeader);
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.warn("⚠️ Kein Bearer Token gefunden!");
+      console.warn("Kein Bearer Token gefunden!");
       res.status(401).json({ message: "Bitte loggen Sie sich ein" });
       return;
     }
 
     const parts = authHeader.split(" ");
     const token = parts[1];
-    console.log("🔑 [Middleware] Extracted Token:", token);
+    console.log("[Middleware] Extracted Token:", token);
 
     if (!token) {
       res.status(401).json({ message: "Token fehlt" });
@@ -39,25 +35,25 @@ const authMiddleware = async (
     }
 
     const decoded = jwt.verify(token, secret) as JwtPayload;
-    console.log("✅ [Middleware] Decoded Token:", decoded);
+    console.log("[Middleware] Decoded Token:", decoded);
 
     if (!decoded || typeof decoded !== "object" || !("id" in decoded)) {
-      console.error("❌ Ungültiger Tokeninhalt:", decoded);
+      console.error("Ungültiger Tokeninhalt:", decoded);
       res.status(401).json({ message: "Ungültiger Tokeninhalt" });
       return;
     }
 
     req.user = { id: decoded.id as string };
-    console.log("👤 [Middleware] User ID from Token:", decoded.id);
+    console.log("[Middleware] User ID from Token:", decoded.id);
 
     const user = await User.findById(decoded.id);
     if (!user) {
-      console.error("🚫 Benutzer nicht gefunden in DB für ID:", decoded.id);
+      console.error("Benutzer nicht gefunden in DB für ID:", decoded.id);
       res.status(401).json({ message: "Benutzer wurde nicht gefunden" });
       return;
     }
 
-    console.log("🎉 Benutzer gefunden:", user.username || user.email);
+    console.log("Benutzer gefunden:", user.username || user.email);
     next();
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {
