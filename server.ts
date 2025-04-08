@@ -1,6 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import "dotenv/config.js";
+import "dotenv/config";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -19,7 +19,10 @@ const PORT = process.env.PORT || 5001;
 
 // here middleware adden
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000", // frontend URL
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser()); // need to read the cookies to get the refresh token
 // app.use(Limiter);  // Out of service for development
@@ -35,6 +38,7 @@ app.use("/api", routes);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
 
 
 
