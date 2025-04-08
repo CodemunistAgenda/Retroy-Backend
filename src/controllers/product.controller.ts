@@ -100,15 +100,20 @@ export const updateProduct = async (req: AuthRequest, res: Response): Promise<vo
   try {
     const id = req.params.id;
     const exsitingProduct = await Product.findById(id);
-    const product: productData = req.body.product;
+    const product: productData = req.body;
+
+    console.log("exsitingProduct", exsitingProduct);
 
     if (exsitingProduct?.salesperson.toString() !== req.user?.id) {
       res.status(403).json({ message: "Sie sind nicht berechtigt, dieses Produkt zu aktualisieren." });
       return;
     }
-    await Product.findByIdAndUpdate(id, product, { new: true });
 
-    res.status(200).json({ message: "Produkt wurde aktualisiert.", product: req.body.product });
+    const newP = await Product.findByIdAndUpdate(id, product, { new: true });
+    console.log("newP", newP);
+    console.log("body product", product);
+
+    res.status(200).json({ message: "Produkt wurde aktualisiert.", product: newP });
   } catch (error) {
     res.status(500).json({ message: "Produkt konnte nicht aktualisiert werden.", error });
   }

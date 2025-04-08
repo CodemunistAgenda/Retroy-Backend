@@ -12,7 +12,7 @@ const orderSchema = new Schema(
         productId: { type: Types.ObjectId, ref: "Product", required: true },
         name: { type: String, required: true },
         quantity: { type: Number, required: true },
-        unitPrice: { type: Number, required: true },
+        price: { type: Number, required: true },
       },
     ],
     taxAmount: { type: Number, required: true },
