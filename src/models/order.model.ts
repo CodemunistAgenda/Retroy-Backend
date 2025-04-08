@@ -9,10 +9,10 @@ const orderSchema = new Schema(
     },
     products: [
       {
-        productId: { type: Types.ObjectId, ref: "Product", required: true },
-        name: { type: String, required: true },
+        _id: { type: Types.ObjectId, ref: "Product", required: true },
+        // name: { type: String, required: true },
         quantity: { type: Number, required: true },
-        price: { type: Number, required: true },
+        // price: { type: Number, required: true },
       },
     ],
     taxAmount: { type: Number, required: true },

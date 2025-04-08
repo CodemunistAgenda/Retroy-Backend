@@ -1,7 +1,6 @@
 import { Schema, model, Types } from "mongoose";
 import { encryptData, decryptData } from "../utils/encription.helper.ts";
 import { email, iban } from "../utils/regex";
-import Address from "./address.model.ts";
 
 const paymentSchema = new Schema({
   userId: {

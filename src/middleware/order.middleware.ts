@@ -4,9 +4,9 @@ import Payment from "../models/payment.model.ts";
 import { onlyLetters, numbersOnly } from "../utils/regex.ts";
 import Cart from "../models/cart.model.ts";
 import Address from "../models/address.model.ts";
-import Product from "../models/product.model.ts";
 
 interface productItem {
+  product: any;
   productId: string;
   quantity: number;
   price: number;
@@ -335,8 +335,9 @@ export const calculateShippingCost = (req: AuthRequest, res: Response, next: Nex
             return;
           }
 
-          if (deliverySurcharges[type]) {
-            const price = item.product.price * item.quantity * deliverySurcharges[type];
+          if (deliverySurcharges[type as keyof typeof deliverySurcharges]) {
+            const price =
+              item.product.price * item.quantity * deliverySurcharges[type as keyof typeof deliverySurcharges];
             const count = item.quantity;
 
             surcharges.push({
