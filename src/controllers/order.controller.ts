@@ -1,5 +1,6 @@
 import Order from "../models/order.model";
 import { type Request, type Response } from "express";
+import Product from "../models/product.model";
 
 /**
  * @desc Bestellung erstellen
@@ -45,9 +46,25 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       specialTotal,
     });
 
+    console.log("newOrder", newOrder);
+
     await newOrder.save();
 
     res.status(201).json(newOrder);
+
+    const products = req.body.cart.items;
+
+    try {
+      for (const item of products) {
+        const product = await Product.findById(item.product._id);
+        if (product) {
+          product.stock -= item.quantity;
+          await product.save();
+        }
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Fehler beim Aktualisieren des Lagerbestands.", error });
+    }
   } catch (error) {
     res.status(500).json({ message: "Bestellung konnte nicht erstellt werden.", error });
   }

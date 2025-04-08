@@ -13,7 +13,6 @@ import {
   getAndValidateAdress,
   calculatePrices,
   calculateShippingCost,
-  updateQuantity,
 } from "../middleware/order.middleware.ts";
 
 const router = Router();
@@ -21,15 +20,9 @@ const router = Router();
 router
   .route("/")
   .get(getAllOrders)
-  .get(getAllOrdersOfUser)
-  .post(
-    validateProductsForOrder,
-    getAndValidateAdress,
-    calculatePrices,
-    calculateShippingCost,
-    updateQuantity,
-    createOrder
-  );
-router.route("/:id").get(getOrderById).put(updateOrder).delete(deleteOrder);
+
+  .post(validateProductsForOrder, getAndValidateAdress, calculatePrices, calculateShippingCost, createOrder);
+
+router.route("/:id").get(getAllOrdersOfUser).get(getOrderById).put(updateOrder).delete(deleteOrder);
 
 export default router;

@@ -371,20 +371,3 @@ export const calculateShippingCost = (req: AuthRequest, res: Response, next: Nex
     errorResponse(500, "Fehler beim berechnen der Versandkosten", err);
   }
 };
-
-export const updateQuantity = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  const products: productItem[] = req.body.cart.items;
-
-  try {
-    for (const item of products) {
-      const product = await Product.findById(item.product._id);
-      if (product) {
-        product.stock -= item.quantity;
-        await product.save();
-      }
-    }
-    next();
-  } catch (error) {
-    res.status(500).json({ message: "Fehler beim aktualisieren der Produkte", error });
-  }
-};
