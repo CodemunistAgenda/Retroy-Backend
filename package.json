@@ -34,6 +34,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.5",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
@@ -46,7 +47,6 @@
     "jsonwebtoken": "^9.0.2",
     "jwt": "^0.2.0",
     "mongoose": "^8.13.0",
-    "nodemailer": "^6.10.0",
     "validator": "^13.15.0",
     "zxcvbn": "^4.4.2"
   }

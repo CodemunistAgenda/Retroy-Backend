@@ -131,54 +131,82 @@ export const register = async (req: Request, res: Response): Promise<void> => {
  * @route POST /user/login
  */
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+interface LoginRequest extends Request {
+  body: {
+    email?: string;
+    username?: string;
+    password: string;
+    remeberMe?: boolean;
+  };
+  user?: {
+    _id: string;
+    username: string;
+    email: string;
+    password: string;
+    role: string;
+  };
+}
+
+export const login = async (req: LoginRequest, res: Response): Promise<void> => {
   try {
     let { email, username, password, remeberMe } = req.body;
-    email !== undefined ? validator.escape(email) : email;
-    username !== undefined ? validator.escape(username) : username;
-    password !== undefined ? validator.escape(password) : password;
+    if (email) email = validator.escape(email);
+    if (username) username = validator.escape(username);
+    if (password) password = validator.escape(password);
 
-    if (!password) {
-      res.status(400).json({ message: "Enter a password!" });
-      return;
-    }
-
-    if (!email && !username) {
-      res.status(400).json({ message: "Please enter email or username" });
-      return;
-    }
     let user;
 
-    if (email) {
-      if (!validator.isEmail(email)) {
-        res.status(400).json({ message: "Invalid email" });
+    if (!req.user) {
+      console.log("body", req.user);
+      console.log("normal login");
+      if (!password) {
+        res.status(400).json({ message: "Enter a password!" });
         return;
       }
-      user = await User.findOne({ email });
-      if (!user || user.deleted?.isDeleted) {
-        res.status(401).json({ message: "Incorrect email, username or Passwort" });
+
+      if (!email && !username) {
+        res.status(400).json({ message: "Please enter email or username" });
         return;
       }
-    } else if (username) {
-      if (!validator.isAlphanumeric(username)) {
-        res.status(401).json({ message: "Invalid username" });
+
+      if (email) {
+        if (!validator.isEmail(email)) {
+          res.status(400).json({ message: "Invalid email" });
+          return;
+        }
+        user = await User.findOne({ email });
+        if (!user || user.deleted?.isDeleted) {
+          res.status(401).json({ message: "Incorrect email, username or Passwort" });
+          return;
+        }
+      } else if (username) {
+        if (!validator.isAlphanumeric(username)) {
+          res.status(401).json({ message: "Invalid username" });
+          return;
+        }
+        user = await User.findOne({ username: username });
+        if (!user || user.deleted?.isDeleted) {
+          res.status(401).json({ message: "Incorrect email, username or Passwort" });
+          return;
+        }
+        // das ist notwendig damit bei
+      }
+
+      const passwordMatch = await bcrypt.compare(password, user?.password as string);
+
+      if (!passwordMatch) {
+        res.status(400).json({ message: "Incorrect email, username or Passwort" });
         return;
       }
-      user = await User.findOne({ username: username });
-      if (!user || user.deleted?.isDeleted) {
-        res.status(401).json({ message: "Incorrect email, username or Passwort" });
-        return;
-      }
+    } else {
+      user = req.user;
     }
 
-    const passwordMatch = await bcrypt.compare(password, user?.password as string);
-
-    if (!passwordMatch) {
-      res.status(400).json({ message: "Incorrect email, username or Passwort" });
-      return;
+    if (user) {
+      user.role = (req.user?.role as "user" | "admin" | "seller" | "moderator") || "user";
     }
 
-    const accessToken = jwt.sign({ id: user?._id }, process.env.JWT_SECRET as string, {
+    const accessToken = jwt.sign({ id: user?._id, role: user?.role }, process.env.JWT_SECRET as string, {
       expiresIn: JWT_ACCESS_EXPIRATION,
     });
 
@@ -203,7 +231,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     res.json({
       message: "Login successful",
-      user: { id: user?._id, email: user?.email, username: user?.username },
+      user: { id: user?._id, email: user?.email, username: user?.username, role: user?.role },
       token: accessToken,
     });
   } catch (error) {

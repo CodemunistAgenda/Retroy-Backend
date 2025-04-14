@@ -7,6 +7,8 @@ import cartRoutes from "./cart.routes.ts";
 import productRoutes from "./product.routes.ts";
 import orderRoutes from "./order.routes.ts";
 import profileRouter from "./profile.routes.ts";
+import adminRoutes from "./Admin/admin.index.ts";
+import { adminAuth } from "../middleware/admin.only.ts";
 
 const router = Router();
 
