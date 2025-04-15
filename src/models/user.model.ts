@@ -82,3 +82,24 @@ const userSchema = new Schema({
 });
 
 export default model("User", userSchema);
+
+export type UserType = {
+  _id: string;
+  username: string;
+  email: string;
+  password: string;
+  verified: boolean;
+  deleted: {
+    isDeleted: boolean;
+    deletedAt: Date | null;
+    reason: string | null;
+    deletedBy: string | null;
+  };
+  cart: string;
+  orders: string[];
+  favorites: string[];
+  role: "user" | "admin" | "seller" | "moderator";
+  profil: string;
+  address: string;
+  payment: string;
+};

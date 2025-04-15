@@ -2,13 +2,18 @@ import { type Request, type Response, type NextFunction } from "express";
 import dotenv from "dotenv";
 dotenv.config();
 
-import User from "../models/user.model.ts";
+import User, { type UserType } from "../models/user.model.ts";
 import bcrypt from "bcryptjs";
 import WhiteList, { type WhiteListType } from "../models/whileList.model.ts";
 import { warningMail } from "./sendingMails.ts";
 import { hulper } from "../utils/regex.ts";
+import { errorResponse } from "../utils/helper.function.ts";
 
-export const adminAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+interface authRequest extends Request {
+  user?: UserType;
+}
+
+export const adminAuth = async (req: authRequest, res: Response, next: NextFunction): Promise<void> => {
   console.log("Admin auth middleware");
   const errorResponse = (status: number, message: string, err?: any) => {
     res.status(status).json({ message, error: err ? err.message : null });
@@ -103,8 +108,9 @@ export const adminAuth = async (req: Request, res: Response, next: NextFunction)
         user.role = "admin";
 
         // hier kann der Admin als User arbeiten, aber in den Handlungen wird nun gespeichert das er als Admin arbeitet
+        // ich weiß nicht wie ich die Fehler meldung hier entfernen kann...
         req.user = user;
-        req.user._id = user.id;
+        req.user!._id = user.id;
 
         next();
       } else {
@@ -121,4 +127,26 @@ export const adminAuth = async (req: Request, res: Response, next: NextFunction)
     errorResponse(500, "Internal server error", error);
     return;
   }
+};
+
+// überprüfen der Role zentral vor dem Admin Router
+
+export const roleCheck = async (req: authRequest, res: Response, next: NextFunction): Promise<void> => {
+  console.log("Role check middleware");
+
+  console.log("User role", req.user?.role);
+
+  const role = req.user?.role;
+  if (!role) {
+    console.warn("User role not found in roleCheck middleware");
+    return errorResponse(res, 404, "User not found in request");
+  }
+
+  if (role !== "admin") {
+    console.warn(`internal error, userrole reaches admin path: ${req.user?.username}, ${role}`);
+    return errorResponse(res, 403, "Access denied");
+  }
+
+  console.log("Role check passed");
+  return next();
 };

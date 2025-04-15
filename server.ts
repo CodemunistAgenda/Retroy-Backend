@@ -24,7 +24,6 @@ const PORT = process.env.PORT || 5001;
 WhiteList.create({
   email: "norman.tetzlaff@dci-student.org",
   username: "NormanT",
-  password: "Gr33nfr0g#s4v3",
 }); */
 
 app.use(

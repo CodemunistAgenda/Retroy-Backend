@@ -168,6 +168,7 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
       isDeleted: true,
       deletedAt: new Date(),
       reason: reason || "No reason provided",
+      deletedBy: userId,
     };
 
     await user.save();
@@ -208,6 +209,7 @@ export const restore = async (req: Request, res: Response): Promise<void> => {
       isDeleted: false,
       deletedAt: null as unknown as Date,
       reason: null as unknown as string,
+      deletedBy: null as unknown as string,
     };
 
     await user.save();

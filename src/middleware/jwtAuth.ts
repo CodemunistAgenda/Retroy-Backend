@@ -6,6 +6,7 @@ import "dotenv/config.js";
 interface AuthRequest extends Request {
   user?: {
     id: string;
+    role?: ["user", "admin", "seller", "moderator"];
   };
 }
 
@@ -43,7 +44,6 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
       return;
     }
 
-    req.user = { id: decoded.id as string };
     console.log("[Middleware] User ID from Token:", decoded.id);
 
     const user = await User.findById(decoded.id);
@@ -52,6 +52,12 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
       res.status(401).json({ message: "Benutzer wurde nicht gefunden" });
       return;
     }
+
+    // Für spätere Überprüfungen speichern wir die Role im User objekt
+    req.user = {
+      id: decoded.id as string,
+      role: decoded.role as ["user", "admin", "seller", "moderator"],
+    };
 
     console.log("Benutzer gefunden:", user.username || user.email);
     next();
