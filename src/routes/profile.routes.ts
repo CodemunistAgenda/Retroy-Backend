@@ -4,6 +4,6 @@ import { createProfile } from "../controllers/profile.controller.ts";
 
 const profileRoutes = Router();
 
-profileRoutes.post("/:id", createProfile);
+profileRoutes.post("/", createProfile);
 
 export default profileRoutes;

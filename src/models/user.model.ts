@@ -67,9 +67,9 @@ const userSchema = new Schema({
     enum: ["user", "admin", "seller", "moderator"],
     default: "user",
   },
-  profil: {
+  personalData: {
     type: Schema.Types.ObjectId,
-    ref: "Profil",
+    ref: "personalData",
   },
   address: {
     type: Schema.Types.ObjectId,

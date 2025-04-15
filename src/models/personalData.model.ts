@@ -64,6 +64,6 @@ const personalInfoSchema = new Schema({
   },
 });
 
-const PersonalData = model("PersonalData", personalInfoSchema);
+const PersonalData = model("personalData", personalInfoSchema);
 
 export default PersonalData;

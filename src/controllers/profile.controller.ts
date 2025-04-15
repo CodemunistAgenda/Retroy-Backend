@@ -2,7 +2,7 @@ import { type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 
 import Address from "../models/address.model.ts";
-import Profil from "../models/personalData.model.ts";
+import PersonalData from "../models/personalData.model.ts";
 import Payment from "../models/payment.model.ts";
 import User from "../models/user.model.ts";
 import { humanVerification } from "../middleware/reCaptcha.ts";
@@ -47,7 +47,7 @@ export const createProfile = async (req: ProfileRequest, res: Response): Promise
       return;
     }
 
-    const hasProfil = user.profil;
+    const hasProfil = user.personalData;
     if (hasProfil) {
       res.status(400).json({ message: "Profile already exists" });
       return;
@@ -55,7 +55,7 @@ export const createProfile = async (req: ProfileRequest, res: Response): Promise
 
     // personal information
     const { firstname, secondname, lastname, phoneNumber } = body.personalData;
-    const personalData = new Profil({
+    const profil = new PersonalData({
       userId,
       firstname,
       secondName: secondname ? secondname : undefined,
@@ -118,11 +118,11 @@ export const createProfile = async (req: ProfileRequest, res: Response): Promise
         : address._id,
     });
 
-    await personalData.save();
+    await profil.save();
     await address.save();
     await payments.save();
 
-    user.profil = personalData._id;
+    user.personalData = profil._id;
     user.address = address._id;
     user.payment = payments._id;
 

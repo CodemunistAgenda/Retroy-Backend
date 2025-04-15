@@ -51,3 +51,11 @@ const addressSchema = new Schema({
 const Address = model("Address", addressSchema);
 
 export default Address;
+
+export type AddressType = {
+  userId: string;
+  street: string;
+  houseNumber: string;
+  city: string;
+  zipCode: string;
+};
