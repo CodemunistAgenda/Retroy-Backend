@@ -15,12 +15,6 @@ const whiteListSchema = new Schema(
       required: true,
       unique: true,
     },
-    password: {
-      type: String,
-      required: true,
-      set: (s: string) => encryptData(s),
-      get: (s: string) => decryptData(s),
-    },
   },
   { timestamps: true }
 );
