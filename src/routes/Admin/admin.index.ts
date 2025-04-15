@@ -10,6 +10,6 @@ router.post("/", (_, res) => {
   });
 });
 
-router.get("/whitelist", whiteListRouter);
+router.use("/whitelist", whiteListRouter);
 
 export default router;
