@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Document, Schema, model } from "mongoose";
 // costum validation
 import { onlyLetters as names, email, username } from "../utils/regex.ts";
 
@@ -81,7 +81,7 @@ const userSchema = new Schema({
   },
 });
 
-export default model("User", userSchema);
+export default model<UserDocument>("User", userSchema);
 
 export type UserType = {
   _id: string;
@@ -99,7 +99,9 @@ export type UserType = {
   orders: string[];
   favorites: string[];
   role: "user" | "admin" | "seller" | "moderator";
-  profil: string;
+  personalData: string;
   address: string;
   payment: string;
 };
+
+export type UserDocument = Document<unknown, {}, UserType> & UserType;

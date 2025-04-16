@@ -63,3 +63,41 @@ const orderSchema = new Schema(
 );
 
 export default model("Order", orderSchema);
+
+export type OrderType = {
+  user: Types.ObjectId;
+  products: {
+    _id: Types.ObjectId;
+    quantity: number;
+  }[];
+  taxAmount: number;
+  totalAmount: number;
+  shippingCost: number;
+  finalAmount: number;
+  shippingAddress: {
+    street: string;
+    city: string;
+    houseNumber: string;
+    zipCode: string;
+  };
+  billingAddress: {
+    street: string;
+    city: string;
+    houseNumber: string;
+    zipCode: string;
+  };
+  shippingMethod: string;
+  status: string;
+  paymentStatus: string;
+  orderSpecials: {
+    type: string;
+    count: number;
+    price: number;
+  }[];
+  specialTotal: number;
+  orderDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  __v: number;
+  _id: Types.ObjectId;
+};

@@ -83,3 +83,22 @@ paymentSchema.pre("save", function (next) {
     next(new Error("Invalid email"));
   }
 });
+
+export type PaymentType = {
+  userId: Types.ObjectId;
+  primary: "creditCard" | "paypal" | "bankTransfer";
+  creditCard?: {
+    cardToken: string;
+  };
+  paypal?: {
+    email: string;
+  };
+  bankTransfer?: {
+    iban: string;
+    bic?: string;
+    bankName?: string;
+    bankAccountNumber?: number;
+  };
+  shippingAddress: Record<string, any>;
+  billingAddress: Record<string, any>;
+};

@@ -18,13 +18,14 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // here middleware adden
-
 /* import WhiteList from "./src/models/whileList.model.ts";
 
 WhiteList.create({
   email: "norman.tetzlaff@dci-student.org",
   username: "NormanT",
-}); */
+  });
+  console.log("Whitelist created");
+*/
 
 app.use(
   cors({

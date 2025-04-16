@@ -40,4 +40,19 @@ const cartSchema = new Schema(
   { timestamps: true }
 );
 
-export default model("Cart", cartSchema);
+export default model<CartType>("Cart", cartSchema);
+
+export type CartType = {
+  user: Types.ObjectId;
+  items: {
+    product: Types.ObjectId;
+    quantity: number;
+    priceAtAddition: number;
+  }[];
+  totalPrice: number;
+  status: "open" | "ordered" | "cancelled";
+  createdAt: Date;
+  updatedAt: Date;
+  __v: number;
+  _id: Types.ObjectId;
+};

@@ -67,3 +67,11 @@ const personalInfoSchema = new Schema({
 const PersonalData = model("personalData", personalInfoSchema);
 
 export default PersonalData;
+
+export type PersonalDataType = {
+  userId: Types.ObjectId;
+  firstname: string;
+  secondName?: string;
+  lastname: string;
+  phoneNumber: string;
+};

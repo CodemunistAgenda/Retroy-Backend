@@ -46,3 +46,20 @@ export const warningMail = async (subject: string, warning: string) => {
     throw new Error("Error sending warning email");
   }
 };
+
+export const sendInformationsEmail = async (email: string, subject: string, text: string) => {
+  const options = {
+    to: email,
+    from: process.env.ADMIN_EMAIL,
+    subject: subject,
+    html: text,
+  };
+
+  try {
+    await sgMail.send(options as Message);
+    console.log("Information email sent to: ", email);
+  } catch (error) {
+    console.error("Error sending information email: ", error);
+    throw new Error("Error sending information email");
+  }
+};
