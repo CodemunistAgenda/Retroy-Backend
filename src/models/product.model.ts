@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Document, Schema, model } from "mongoose";
 
 import { onlyLetters as names, letterAndPunctuation as description } from "../utils/regex";
 
@@ -8,6 +8,7 @@ const productSchema = new Schema(
       type: String,
       required: true,
       trim: true,
+      unique: true,
       minLength: 2,
       validator: {
         validator: function (val: string) {
@@ -118,8 +119,63 @@ const productSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    deleted: {
+      isDeleted: {
+        type: Boolean,
+        default: false,
+      },
+      deletedAt: {
+        type: Date,
+        default: null,
+      },
+      reason: {
+        type: String,
+        default: null,
+      },
+      deletedBy: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+    },
   },
   { timestamps: true }
 );
 
 export default model("Product", productSchema);
+
+export type ProductType = {
+  title: string;
+  description: string;
+  price: number;
+  stock: number;
+  color: string;
+  category: string;
+  images: string[];
+  weight: number;
+  dimensions: {
+    width: number;
+    height: number;
+    depth: number;
+  };
+  mainCategory: string;
+  collectionName: string;
+  specialDelivery: string[];
+  subCollectionName: string;
+  salesperson: string;
+  isPublished: boolean;
+  deleted: {
+    isDeleted: boolean;
+    deletedAt: Date | null;
+    reason: string | null;
+    deletedBy: string | null;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type ProductDocument = ProductType &
+  Document & {
+    _id: string;
+    __v: number;
+  };

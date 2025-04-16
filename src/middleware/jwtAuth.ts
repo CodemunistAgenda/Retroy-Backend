@@ -7,6 +7,7 @@ interface AuthRequest extends Request {
   user?: {
     id: string;
     role?: ["user", "admin", "seller", "moderator"];
+    verified?: boolean;
   };
 }
 
@@ -57,6 +58,7 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
     req.user = {
       id: decoded.id as string,
       role: decoded.role as ["user", "admin", "seller", "moderator"],
+      verified: user.verified,
     };
 
     console.log("Benutzer gefunden:", user.username || user.email);

@@ -1,46 +1,24 @@
-import Product from "../models/product.model";
+import Product, { type ProductDocument } from "../models/product.model";
 import { type Request, type Response } from "express";
+import { errorResponse, successResponse } from "../utils/helper.function";
 
 interface AuthRequest extends Request {
   user?: {
     id: string;
+    role?: ["user", "admin", "seller", "moderator"];
+    verified?: boolean;
   };
-}
-
-interface productData {
-  title: string;
-  description: string;
-  price: number;
-  stock: number;
-  color: string;
-  category: string;
-  images: string[];
-  weight: number;
-  dimensions: {
-    width: number;
-    height: number;
-    depth: number;
-  };
-  specialDelivery: [string];
-  salesperson: string;
-  mainCategory: string;
-  collectionName: string;
-  subCollectionName: string;
-  isPublished: boolean;
 }
 
 export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const products: productData[] = await Product.find();
+    const products: ProductDocument[] = await Product.find();
 
-    if (!products || products.length === 0) {
-      res.status(404).json({ message: "Keine Produkte gefunden." });
-      return;
-    }
+    if (!products || products.length === 0) errorResponse(res, 404, "No products found.");
 
-    res.status(200).json(products);
-  } catch (error) {
-    res.status(500).json({ message: "Produkte konnten nicht geladen werden.", error });
+    return successResponse(res, 200, "Produkte:", products);
+  } catch (err) {
+    return successResponse(res, 500, "Fehler beim Laden der Produkte.", err);
   }
 };
 
@@ -50,9 +28,12 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
  */
 export const createProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const product: productData = req.body;
+    const product: ProductDocument = req.body;
     const salesperson = req.user?.id;
-    console.log("Salesperson ID: ", req.user?.id);
+
+    const verified = req.user?.verified;
+
+    if (verified === false) errorResponse(res, 403, "Please verify your account before creating a product.");
 
     const newProduct = new Product({
       title: product.title,
@@ -72,23 +53,30 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
       isPublished: product.isPublished,
     });
 
+    const existingProduct = await Product.findOne({ title: product.title });
+
+    if (existingProduct) errorResponse(res, 400, "Product with this title already exists.");
+
     const savedProduct = await newProduct.save();
-    if (!savedProduct) {
-      res.status(400).json({ message: "Produkt konnte nicht gespeichert werden." });
-      return;
-    }
-    res.status(201).json({ message: "Neues Produkt erstellt", savedProduct });
+    if (!savedProduct) return errorResponse(res, 500, "Can't save product, creation failed.");
+
+    return successResponse(res, 201, "Product created", savedProduct);
   } catch (error) {
-    res.status(500).json({ message: "Produkt konnte nicht erstellt werden.", error });
+    return errorResponse(res, 500, "Internal Error, could not create the product", error);
   }
 };
 
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const product: productData = req.body.product;
-    res.status(200).json({ message: "Product found by id: ", product });
-  } catch (error) {
-    res.status(500).json({ message: "Fehler beim Laden des Produkts.", error });
+    const { id } = req.params;
+
+    const product: ProductDocument | null = await Product.findById(id);
+
+    if (!product) return errorResponse(res, 404, "Product not found.");
+
+    return successResponse(res, 200, "Product found", product);
+  } catch (err) {
+    return errorResponse(res, 500, "Internal Error, could not get the product", err);
   }
 };
 // um die Produkte zu aktualisieren, muss der Salesperson die ID des Produkts haben
@@ -100,42 +88,49 @@ export const updateProduct = async (req: AuthRequest, res: Response): Promise<vo
   try {
     const id = req.params.id;
     const exsitingProduct = await Product.findById(id);
-    const product: productData = req.body;
+    const product: ProductDocument = req.body;
 
     console.log("exsitingProduct", exsitingProduct);
 
     if (exsitingProduct?.salesperson.toString() !== req.user?.id) {
-      res.status(403).json({ message: "Sie sind nicht berechtigt, dieses Produkt zu aktualisieren." });
-      return;
+      return errorResponse(res, 403, "Permission denied, you are not the owner of this product.");
     }
 
     const newP = await Product.findByIdAndUpdate(id, product, { new: true });
-    console.log("newP", newP);
-    console.log("body product", product);
 
-    res.status(200).json({ message: "Produkt wurde aktualisiert.", product: newP });
-  } catch (error) {
-    res.status(500).json({ message: "Produkt konnte nicht aktualisiert werden.", error });
+    return successResponse(res, 200, "Product updated", newP);
+  } catch (err) {
+    return errorResponse(res, 500, "Internal Error, could not update the product", err);
   }
 };
 
-export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
+export const deleteProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const id = req.params.id;
+    const user = req.user?.id;
+    const reason = req.body.reason;
 
-    if (!id) {
-      res.status(400).json({ message: "Produkt ID ist erforderlich." });
-      return;
+    const product: ProductDocument | null = await Product.findById(id);
+
+    if (!product) return errorResponse(res, 404, "Product not found.");
+
+    if (product?.salesperson.toString() !== user) {
+      return errorResponse(res, 403, "Permission denied, you are not the owner of this product.");
     }
 
-    const deleted = await Product.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      res.status(404).json({ message: "Produkt nicht gefunden." });
-      return;
-    }
+    if (product.deleted.isDeleted) return errorResponse(res, 400, "Product already deleted.");
 
-    res.status(200).json({ message: "Produkt wurde gelöscht." });
-  } catch (error) {
-    res.status(500).json({ message: "Produkt konnte nicht gelöscht werden.", error });
+    product.deleted = {
+      isDeleted: true,
+      deletedAt: new Date(),
+      reason: reason || "No reason provided",
+      deletedBy: user,
+    };
+
+    await product.save();
+
+    return successResponse(res, 200, "Product deleted", product);
+  } catch (err) {
+    return errorResponse(res, 500, "Internal Error, could not delete the product", err);
   }
 };
