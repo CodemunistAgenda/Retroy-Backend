@@ -1,14 +1,6 @@
 import { Router } from "express";
 
-import {
-  register,
-  login,
-  deleteUser,
-  restore,
-  logout,
-  refreshToken,
-  getCurrentUser,
-} from "../controllers/auth.controller.ts";
+import { register, login, deleteUser, logout, refreshToken, getCurrentUser } from "../controllers/auth.controller.ts";
 import { verifyUser } from "../controllers/verifyUser.ts";
 import { adminAuth } from "../middleware/admin.only.ts";
 
@@ -18,7 +10,6 @@ userRouter
   .post("/register", register)
   .post("/login", adminAuth, login)
   .get("/verify", verifyUser)
-  .post("/restore/:id", restore)
   .post("/logout", logout)
   .get("/refresh", refreshToken)
   .post("/delete/:id", deleteUser)

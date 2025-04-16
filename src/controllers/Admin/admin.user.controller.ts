@@ -1,6 +1,6 @@
 import { type Request, type Response } from "express";
 import { errorResponse } from "../../utils/helper.function";
-import User, { type UserDocument, type UserType } from "../../models/user.model";
+import User, { type UserDocument } from "../../models/user.model";
 import { type AddressType } from "../../models/address.model";
 import { type PersonalDataType } from "../../models/personalData.model";
 import { type PaymentType } from "../../models/payment.model";
@@ -18,6 +18,8 @@ interface populatesUser
   favorites?: string[];
   cart?: CartDoc;
 }
+
+//man kann beim updaten eine bereits verwendete email angeben als user email addresse das muss behaben werden
 
 interface PersonalDataDoc extends PersonalDataType, Document {}
 interface PaymentDoc extends PaymentType, Document {}
@@ -138,14 +140,18 @@ export const adminUserUpdate = async (req: Request, res: Response): Promise<void
 
     // alle werte im direkten body werden in den user geschrieben
     if (userUpdates) {
+      if (userUpdates.email) {
+        const inUse = await User.findOne({ email: userUpdates.email });
+
+        if (inUse && inUse._id.toString() !== targetUser._id.toString()) {
+          return errorResponse(res, 400, "Email already in use");
+        }
+      }
       Object.assign(targetUser, userUpdates);
     }
 
     // hier wird der user in die jeweilige collection geschrieben
 
-    /**
-     * @warning TS kann nicht erkennen, dass die collections existieren
-     */
     if (personalData && isPopulated(targetUser.personalData) && targetUser.personalData) {
       Object.assign(targetUser.personalData, personalData);
       await targetUser.personalData.save();
@@ -284,5 +290,50 @@ export const adminUserUpdate = async (req: Request, res: Response): Promise<void
     });
   } catch (e) {
     return errorResponse(res, 500, "Error updating user", e);
+  }
+};
+
+export const restoreUserByAdmin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const targetId = req.params.id;
+
+    if (!targetId) {
+      errorResponse(res, 400, "No user id provided");
+      return;
+    }
+
+    const targetUser = await User.findById(targetId);
+
+    if (!targetUser) {
+      errorResponse(res, 404, "User not found");
+      return;
+    }
+
+    if (targetUser.deleted?.isDeleted === false) {
+      errorResponse(res, 400, "Restoring request failed, user is not deleted");
+      return;
+    }
+
+    targetUser.deleted = {
+      isDeleted: false,
+      deletedAt: null as unknown as Date,
+      reason: null as unknown as string,
+      deletedBy: null as unknown as string,
+    };
+
+    await targetUser.save();
+
+    sendInformationsEmail(
+      targetUser.email,
+      "Your account has been restored",
+      `<h2>Dear ${targetUser.username}</h2>
+      <p>Your request to restore your account has been approved.</p>
+      <p>If you have any questions, feel free to contact us: <a href="mailto:${process.env.ADMIN_EMAIL}">User Support</a></p>
+      <p>We protect your data and all changes are DSGVO confirm</p>`
+    );
+
+    res.status(200).json({ message: "User restored successfully" });
+  } catch (err) {
+    errorResponse(res, 500, "Error restoring user", err);
   }
 };
