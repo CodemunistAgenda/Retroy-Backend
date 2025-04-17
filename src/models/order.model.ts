@@ -10,9 +10,7 @@ const orderSchema = new Schema(
     products: [
       {
         _id: { type: Types.ObjectId, ref: "Product", required: true },
-        // name: { type: String, required: true },
         quantity: { type: Number, required: true },
-        // price: { type: Number, required: true },
       },
     ],
     taxAmount: { type: Number, required: true },
@@ -46,6 +44,20 @@ const orderSchema = new Schema(
       enum: ["pending", "paid", "failed"],
       default: "pending",
     },
+    paymentMethod: {
+      type: String,
+      enum: ["credit_card", "paypal", "bank_transfer", "cash_on_delivery"],
+      required: true,
+    },
+    paymentRefference: {
+      type: String,
+      required: true,
+    },
+    paidAt: Date,
+    cancel: {
+      reason: { type: String, default: "" },
+      date: { type: Date, default: null },
+    },
     orderSpecials: [
       {
         type: { type: String, enum: ["danger", "fragile", "oversize"], default: "none" },
@@ -64,7 +76,7 @@ const orderSchema = new Schema(
 
 export default model("Order", orderSchema);
 
-export type OrderType = {
+export type OrderDoc = {
   user: Types.ObjectId;
   products: {
     _id: Types.ObjectId;
@@ -86,11 +98,18 @@ export type OrderType = {
     houseNumber: string;
     zipCode: string;
   };
-  shippingMethod: string;
-  status: string;
-  paymentStatus: string;
+  shippingMethod: "standard" | "express" | "overnight";
+  status: "pending" | "shipped" | "delivered" | "cancelled";
+  paymentStatus: "pending" | "paid" | "failed";
+  paymentMethod: "credit_card" | "paypal" | "bank_transfer" | "cash_on_delivery";
+  paymentRefference: string;
+  paidAt?: Date;
+  cancel: {
+    reason: string;
+    date: Date | null;
+  };
   orderSpecials: {
-    type: string;
+    type: "danger" | "fragile" | "oversize" | "none";
     count: number;
     price: number;
   }[];

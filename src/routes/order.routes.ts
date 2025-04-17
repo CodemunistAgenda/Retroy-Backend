@@ -1,28 +1,29 @@
 import { Router } from "express";
-import {
-  createOrder,
-  getAllOrders,
-  getOrderById,
-  updateOrder,
-  deleteOrder,
-  getAllOrdersOfUser,
-} from "../controllers/order.controller";
+import { createOrder, getOrderById, cancelOrder, getAllOrdersOfUser } from "../controllers/order.controller";
 
 import {
   validateProductsForOrder,
   getAndValidateAdress,
   calculatePrices,
   calculateShippingCost,
+  validatePayment,
+  valReason,
 } from "../middleware/order.middleware.ts";
 
 const router = Router();
 
 router
   .route("/")
-  .get(getAllOrders)
 
-  .post(validateProductsForOrder, getAndValidateAdress, calculatePrices, calculateShippingCost, createOrder);
+  .post(
+    validateProductsForOrder,
+    getAndValidateAdress,
+    calculatePrices,
+    calculateShippingCost,
+    validatePayment,
+    createOrder
+  );
 
-router.route("/:id").get(getAllOrdersOfUser).get(getOrderById).put(updateOrder).delete(deleteOrder);
+router.route("/:id").get(getAllOrdersOfUser).get(getOrderById).patch(valReason, cancelOrder);
 
 export default router;
