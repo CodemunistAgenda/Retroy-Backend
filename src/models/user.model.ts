@@ -1,6 +1,7 @@
 import { Document, Schema, model } from "mongoose";
 // costum validation
 import { onlyLetters as names, email, username } from "../utils/regex.ts";
+import type { PersonalDataType } from "./personalData.model.ts";
 
 const userSchema = new Schema({
   username: {
@@ -99,7 +100,7 @@ export type UserType = {
   orders: string[];
   favorites: string[];
   role: "user" | "admin" | "seller" | "moderator";
-  personalData: string;
+  personalData: string | PersonalDataType;
   address: string;
   payment: string;
 };

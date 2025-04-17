@@ -12,7 +12,9 @@ interface AuthRequest extends Request {
 
 export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const products: ProductDocument[] = await Product.find();
+    let products: ProductDocument[] = await Product.find();
+
+    products = products.filter((product) => !product.deleted.isDeleted);
 
     if (!products || products.length === 0) errorResponse(res, 404, "No products found.");
 
@@ -130,5 +132,32 @@ export const deleteProduct = async (req: AuthRequest, res: Response): Promise<vo
     return successResponse(res, 200, "Product deleted", product);
   } catch (err) {
     return errorResponse(res, 500, "Internal Error, could not delete the product", err);
+  }
+};
+
+export const restoreProductByOwner = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const product: ProductDocument | null = await Product.findById(id);
+
+    if (!product || product.deleted.isDeleted === false) {
+      return errorResponse(res, 404, "Product not found or not deleted.");
+    }
+
+    if (product.deleted.deletedBy?.toString() !== req.user?.id) {
+      return errorResponse(res, 403, "This product was deleted from Retroy Admin, you got informations in your email.");
+    }
+
+    product.deleted = {
+      isDeleted: false,
+      deletedAt: null,
+      reason: null,
+      deletedBy: null,
+    };
+    await product.save();
+    return successResponse(res, 200, "Product restored", product);
+  } catch (err) {
+    return errorResponse(res, 500, "Internal Error, could not restore the product", err);
   }
 };

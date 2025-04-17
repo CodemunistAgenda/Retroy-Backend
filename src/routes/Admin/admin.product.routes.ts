@@ -13,7 +13,7 @@ import { checkReason } from "../../middleware/Admin/admin.product.middleware";
 const router = Router();
 
 router.get("/", filterProducts);
-router.get("/all/:id", getProductsOfUser);
+router.get("/:id/all", getProductsOfUser);
 router
   .route("/:id")
   .get(getProductById)

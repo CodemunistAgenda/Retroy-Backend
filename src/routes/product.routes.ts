@@ -5,6 +5,7 @@ import {
   getProductById,
   updateProduct,
   deleteProduct,
+  restoreProductByOwner,
 } from "../controllers/product.controller";
 
 import { findProductById, validateProduct, validateProductForUpdate } from "../middleware/product.middleware.ts";
@@ -17,6 +18,7 @@ router
   .route("/:id")
   .get(findProductById, getProductById)
   .put(protect, findProductById, validateProductForUpdate, updateProduct)
-  .delete(protect, findProductById, deleteProduct);
+  .delete(protect, findProductById, deleteProduct)
+  .post(protect, findProductById, restoreProductByOwner);
 
 export default router;

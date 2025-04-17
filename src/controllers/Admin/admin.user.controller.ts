@@ -1,11 +1,12 @@
 import { type Request, type Response } from "express";
-import { errorResponse } from "../../utils/helper.function";
+import { errorResponse, successResponse } from "../../utils/helper.function";
 import User, { type UserDocument } from "../../models/user.model";
 import { type AddressType } from "../../models/address.model";
 import { type PersonalDataType } from "../../models/personalData.model";
 import { type PaymentType } from "../../models/payment.model";
-import { type OrderType } from "../../models/order.model";
+import Order, { type OrderType } from "../../models/order.model";
 import { type CartType } from "../../models/cart.model";
+import Product, { type ProductDocument } from "../../models/product.model";
 import type { Document, Types } from "mongoose";
 import { sendInformationsEmail } from "../../middleware/sendingMails";
 
@@ -28,6 +29,14 @@ interface AddressDoc extends AddressType, Document {}
 // es kann zu konflikten kommen wenn die Objekte komplexer werden aber ich weis nicht wie ich das sonst lösen soll
 type OrderDoc = OrderType & Document;
 type CartDoc = CartType & Document;
+
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    role?: ["user", "admin", "seller", "moderator"];
+    verified?: boolean;
+  };
+}
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -314,6 +323,21 @@ export const restoreUserByAdmin = async (req: Request, res: Response): Promise<v
       return;
     }
 
+    const productsOfUser: ProductDocument[] | null = await Product.find({ salesperson: targetUser._id });
+    if (productsOfUser) {
+      for (const product of productsOfUser) {
+        if (product.deleted.reason === "User has been deleted") {
+          product.deleted = {
+            isDeleted: false,
+            deletedAt: null as unknown as Date,
+            reason: null as unknown as string,
+            deletedBy: null as unknown as string,
+          };
+          await product.save();
+        }
+      }
+    }
+
     targetUser.deleted = {
       isDeleted: false,
       deletedAt: null as unknown as Date,
@@ -323,17 +347,92 @@ export const restoreUserByAdmin = async (req: Request, res: Response): Promise<v
 
     await targetUser.save();
 
-    sendInformationsEmail(
-      targetUser.email,
-      "Your account has been restored",
-      `<h2>Dear ${targetUser.username}</h2>
-      <p>Your request to restore your account has been approved.</p>
-      <p>If you have any questions, feel free to contact us: <a href="mailto:${process.env.ADMIN_EMAIL}">User Support</a></p>
-      <p>We protect your data and all changes are DSGVO confirm</p>`
-    );
+    const supportEmail = process.env.SUPPORT_EMAIL;
+    if (!supportEmail) return errorResponse(res, 500, "cant find support email");
+    const text = `<h2>Dear ${targetUser.username}</h2>
+        <p>Your request to restore your account has been approved.</p>
+        <p>All your offers have been restored.</p>
+        <p>If you have any questions, feel free to contact us: <a href="mailto:${supportEmail}">User Support</a></p>
+        <p>We protect your data and all changes are DSGVO confirm</p>`;
 
-    res.status(200).json({ message: "User restored successfully" });
+    if (process.env.VERIFYING === "true") {
+      sendInformationsEmail(targetUser.email, "Your account has been restored", text);
+    }
+
+    console.log("targetUser", targetUser);
+    console.log("text", text);
+
+    return successResponse(res, 200, "User restored successfully", targetUser);
   } catch (err) {
     errorResponse(res, 500, "Error restoring user", err);
+  }
+};
+
+export const deleteUserByAdmin = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const admin = req.user?.id;
+
+    if (!id) return errorResponse(res, 400, "No user id provided");
+
+    if (!admin) return errorResponse(res, 400, "No admin id provided");
+
+    const target: UserDocument | null = await User.findById(id);
+    if (!target) return errorResponse(res, 404, "no User with this id found");
+    if (target.deleted?.isDeleted === true) return errorResponse(res, 400, "User already deleted");
+
+    const productsOfUser: ProductDocument[] | null = await Product.find({ salesperson: target._id });
+
+    if (productsOfUser) {
+      for (const product of productsOfUser) {
+        product.deleted = {
+          isDeleted: true,
+          deletedAt: new Date(),
+          reason: "User has been deleted",
+          deletedBy: admin,
+        };
+        console.log("product", product);
+        await product.save();
+      }
+    }
+    target.deleted = {
+      isDeleted: true,
+      deletedAt: new Date(),
+      reason: reason || "no reason provided",
+      deletedBy: admin,
+    };
+
+    console.log("target", target);
+
+    await target.save();
+
+    let supportEmail = process.env.SUPPORT_EMAIL;
+    if (!supportEmail) {
+      return errorResponse(res, 500, "cant find support email");
+    }
+
+    console.log(target);
+
+    let text = `
+        <h2>Dear ${target.username},</h2>
+        <p>We regret to inform you that your account has been deleted</p>
+        <p>All your offers have been deleted to</p>
+        <p>All pending orders will be delivered, but you will not longer be able to cancel, or refund them!
+        if you need to, you can contact our support team: <a href="mailto${supportEmail}"></p>
+        <p>Reason: ${reason || "No reason provided"}</p>
+        <p>If you have any questions, feel free to contact us: <a href="mailto:${supportEmail}">User Support</a></p>
+        <br>
+        <p>Best regards,</p>
+        <p>Retroy Customer Support</p>
+      `;
+
+    console.log("text", text);
+
+    if (process.env.VERIFYING === "true") sendInformationsEmail(target.email, "Account deleted", text);
+
+    return successResponse(res, 200, "User deleted successfully", target);
+  } catch (err) {
+    return errorResponse(res, 500, "Error deleting user", err);
   }
 };

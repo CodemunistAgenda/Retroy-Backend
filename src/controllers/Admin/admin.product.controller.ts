@@ -208,7 +208,7 @@ export const deleteUserProduct = async (req: AuthRequest, res: Response): Promis
       deletedBy: req.user!.id,
     };
 
-    // targetProduct.save();
+    targetProduct.save();
 
     let text = `
       <h2>Dear ${user.username},</h2>
