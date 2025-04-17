@@ -72,6 +72,7 @@ const productSchema = new Schema(
         width: { type: Number, required: true, min: 0 },
         height: { type: Number, required: true, min: 0 },
         depth: { type: Number, required: true, min: 0 },
+        _id: false,
       },
       required: true,
       validate: {

@@ -68,11 +68,9 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
 
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const { product } = req.body;
 
-    const product: ProductDocument | null = await Product.findById(id);
-
-    if (!product) return errorResponse(res, 404, "Product not found.");
+    if (!product) return errorResponse(res, 404, "Middleware failed no Product exist.");
 
     return successResponse(res, 200, "Product found", product);
   } catch (err) {
@@ -106,7 +104,7 @@ export const updateProduct = async (req: AuthRequest, res: Response): Promise<vo
 
 export const deleteProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const id = req.params.id;
+    const { id } = req.params;
     const user = req.user?.id;
     const reason = req.body.reason;
 
