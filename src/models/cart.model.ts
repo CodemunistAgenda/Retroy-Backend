@@ -23,7 +23,10 @@ const cartSchema = new Schema(
         priceAtAddition: {
           type: Number,
           required: true,
+          default: 0, // Default value added to avoid validation errors
         },
+        // Disable automatic generation of _id for subdocuments in the items array
+        _id: false,
       },
     ],
     totalPrice: {
@@ -35,6 +38,10 @@ const cartSchema = new Schema(
       type: String,
       enum: ["open", "ordered", "cancelled"],
       default: "open",
+    },
+    deleted: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

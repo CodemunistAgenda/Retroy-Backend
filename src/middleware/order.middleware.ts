@@ -46,8 +46,9 @@ interface orderSurcharges {
   count: number;
   price: number;
 }
-
+// tested und checked at 2025-19-04 00.19
 export const validateProductsForOrder = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  console.log("validate Products for order");
   try {
     const userId = req.user?.id;
     const userCart = await Cart.findOne({ user: new Types.ObjectId(userId) }).populate("items.product");
@@ -69,15 +70,6 @@ export const validateProductsForOrder = async (req: AuthRequest, res: Response, 
         continue;
       }
 
-      if (product.stock < item.quantity) {
-        invalidProducts.push({
-          reason: "Not enough stock",
-          product: (product as ProductDocument)._id,
-          availableStock: product.stock,
-          requestedQuantity: item.quantity,
-        });
-      }
-
       if (!product.isPublished) {
         invalidProducts.push({
           product: (product as ProductDocument).id,
@@ -92,7 +84,9 @@ export const validateProductsForOrder = async (req: AuthRequest, res: Response, 
         });
       }
 
-      return errorResponse(res, 400, "Fehler: Produkte sind nicht verfügbar", invalidProducts);
+      if (invalidProducts.length > 0) {
+        return errorResponse(res, 400, "Fehler: Ungültige Produkte im Warenkorb", invalidProducts);
+      }
     }
 
     req.body.cart = userCart;
@@ -104,6 +98,7 @@ export const validateProductsForOrder = async (req: AuthRequest, res: Response, 
 };
 
 export const getAndValidateAdress = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+  console.log("get and validate address");
   try {
     const userId = req.user?.id;
 
@@ -140,12 +135,15 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
     }
 
     const valitateAddress = (address: OrderAddress) => {
+      console.log("address", address);
       let errors = [];
 
       if (!address) {
         errors.push("address is required");
       }
       const valString = (str: string, min: number, max: number, regex: RegExp) => {
+        // ACHTUNG DAS HIER IST INCONSISTENT ICH HABE EINEN FEHLER IN DER DB
+        // if (typeof str === "number") str = str.toString();
         if (typeof str !== "string" || str.length < min || str.length > max || !regex.test(str)) {
           errors.push(`Invalid string: ${str}`);
         }
@@ -338,9 +336,11 @@ export const calculateShippingCost = (req: AuthRequest, res: Response, next: Nex
 };
 
 export const validatePayment = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  const { paymentMethod, paymentRefference } = req.body;
+  const { paymentMethod, paymentReference } = req.body;
 
-  if (!paymentMethod || !paymentRefference)
+  console.log("paymentMethod", paymentMethod);
+  console.log("paymentReference", paymentReference);
+  if (!paymentMethod || !paymentReference)
     return errorResponse(res, 400, "Fehler: Zahlungsmethode oder Referenz fehlt");
 
   const validatedPaymentMethod = ["creditcard", "paypal", "bank_transfer", "cash_on_delivery"].includes(paymentMethod);
@@ -355,12 +355,12 @@ export const validatePayment = (req: AuthRequest, res: Response, next: NextFunct
     };
 
     if (paymentMethod in validator) {
-      const isValid = validator[paymentMethod as keyof typeof validator]?.(paymentRefference);
+      const isValid = validator[paymentMethod as keyof typeof validator]?.(paymentReference);
 
       if (!isValid) return errorResponse(res, 400, "Fehler: Ungültige Zahlungsreferenz");
     }
   } else {
-    if (paymentRefference !== "N/A" && paymentRefference !== null) {
+    if (paymentReference !== "N/A" && paymentReference !== null) {
       return errorResponse(res, 400, "No payment reference in cash on delivery");
     }
   }

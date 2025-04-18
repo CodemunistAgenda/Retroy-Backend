@@ -1,4 +1,4 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, Document } from "mongoose";
 
 const orderSchema = new Schema(
   {
@@ -49,7 +49,7 @@ const orderSchema = new Schema(
       enum: ["credit_card", "paypal", "bank_transfer", "cash_on_delivery"],
       required: true,
     },
-    paymentRefference: {
+    paymentReference: {
       type: String,
       required: true,
     },
@@ -63,6 +63,7 @@ const orderSchema = new Schema(
         type: { type: String, enum: ["danger", "fragile", "oversize"], default: "none" },
         count: { type: Number, default: 0 },
         price: { type: Number, default: 0 },
+        _id: false,
       },
     ],
     specialTotal: { type: Number, default: 0 },
@@ -76,7 +77,7 @@ const orderSchema = new Schema(
 
 export default model("Order", orderSchema);
 
-export type OrderDoc = {
+export type OrderDoc = Document & {
   user: Types.ObjectId;
   products: {
     _id: Types.ObjectId;
@@ -102,7 +103,7 @@ export type OrderDoc = {
   status: "pending" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "pending" | "paid" | "failed";
   paymentMethod: "credit_card" | "paypal" | "bank_transfer" | "cash_on_delivery";
-  paymentRefference: string;
+  paymentReference: string;
   paidAt?: Date;
   cancel: {
     reason: string;

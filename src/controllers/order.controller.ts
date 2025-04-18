@@ -27,13 +27,13 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       shippingCost,
       finalAmount,
       orderSpecials,
-      paidmentMethod,
-      paymentRefference,
+      paymentMethod,
+      paymentReference,
       specialTotal,
     } = req.body;
 
     // wir checken hier noch schnell die payment methode
-    if (!["creditcard", "paypal", "banktransfer"].includes(paidmentMethod))
+    if (!["creditcard", "paypal", "banktransfer"].includes(paymentMethod))
       return errorResponse(res, 400, "Zahlungsmethode nicht verfügbar");
 
     const newOrder = new Order({
@@ -45,8 +45,8 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
       totalAmount,
       taxAmount,
       shippingCost,
-      paidmentMethod,
-      paymentRefference,
+      paymentMethod,
+      paymentReference,
       finalAmount,
       orderSpecials,
       specialTotal,
@@ -55,18 +55,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     await newOrder.save();
 
     const products = req.body.cart.items;
-
-    try {
-      for (const item of products) {
-        const product = await Product.findById(item.product._id);
-        if (product) {
-          product.stock -= item.quantity;
-          await product.save();
-        }
-      }
-    } catch (error) {
-      return errorResponse(res, 500, "Fehler beim Aktualisieren des Lagerbestands.", error);
-    }
 
     return successResponse(res, 201, "Bestellung erfolgreich erstellt.", newOrder);
   } catch (error) {

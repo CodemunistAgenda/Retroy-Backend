@@ -231,3 +231,53 @@ export const deleteUserProduct = async (req: AuthRequest, res: Response): Promis
     return errorResponse(res, 500, "Error while deleting product", err);
   }
 };
+
+export const restoreUserProduct = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const targetProduct: ProductDocument | null = await Product.findById(id);
+
+    if (!targetProduct) {
+      return errorResponse(res, 404, "Product not found.");
+    }
+
+    if (!targetProduct.deleted.isDeleted) {
+      return errorResponse(res, 400, "Product is not deleted.");
+    }
+
+    const popProduct = await targetProduct.populate<{ salesperson: UserDocument }>("salesperson", "username email");
+
+    const user: UserDocument | null = popProduct.salesperson;
+    if (!user) {
+      return errorResponse(res, 404, "User not found.");
+    }
+
+    if (user.deleted.isDeleted) {
+      return errorResponse(res, 400, "Cant restore product, seller is deleted.");
+    }
+
+    targetProduct.deleted = {
+      isDeleted: false,
+      deletedAt: null,
+      reason: null,
+      deletedBy: null,
+    };
+    targetProduct.save();
+    let text = `
+      <h2>Dear ${user.username},</h2>
+      <p>We are pleased to inform you that your product named: ${targetProduct.title}, has been restored.</p>
+      <p>If you have any questions, feel free to contact us: <a href="mailto:${process.env.SUPPORT_EMAIL}">Customer Support</a></p>
+      <p>Best regards,</p>
+      <p>Retroy Customer Support</p>
+    `;
+    if (process.env.VERIFYING === "true") {
+      sendInformationsEmail(user.email, "Information from Retroy Costumer Support", text);
+    }
+    console.log("targetProduct", targetProduct);
+    console.log("text", text);
+    return successResponse(res, 200, "Product restored successfully.", targetProduct);
+  } catch (err) {
+    return errorResponse(res, 500, "Error while restoring product", err);
+  }
+};

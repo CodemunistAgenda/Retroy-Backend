@@ -4,7 +4,7 @@ import User, { type UserDocument } from "../../models/user.model";
 import { type AddressType } from "../../models/address.model";
 import { type PersonalDataType } from "../../models/personalData.model";
 import { type PaymentType } from "../../models/payment.model";
-import Order, { type OrderType } from "../../models/order.model";
+import Order, { type OrderDoc } from "../../models/order.model";
 import { type CartType } from "../../models/cart.model";
 import Product, { type ProductDocument } from "../../models/product.model";
 import type { Document, Types } from "mongoose";
@@ -27,7 +27,6 @@ interface PaymentDoc extends PaymentType, Document {}
 interface AddressDoc extends AddressType, Document {}
 
 // es kann zu konflikten kommen wenn die Objekte komplexer werden aber ich weis nicht wie ich das sonst lösen soll
-type OrderDoc = OrderType & Document;
 type CartDoc = CartType & Document;
 
 interface AuthRequest extends Request {

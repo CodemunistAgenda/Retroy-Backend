@@ -13,12 +13,11 @@ import protect from "../middleware/jwtAuth.ts";
 const router = Router();
 
 router
-  .use(protect)
-  .get("/:id", getUserCart)
+  .get("/", getUserCart)
   .post("/add", addToCart)
-  .patch("/increase/:productId", increaseQuantity)
-  .patch("/decrease/:productId", decreaseQuantity)
-  .delete("/remove/:productId", removeFromCart)
+  .patch("/:id/increase", increaseQuantity)
+  .patch("/:id/decrease", decreaseQuantity)
+  .delete("/:id/remove", removeFromCart)
   .delete("/clear", clearCart);
 
 export default router;
