@@ -1,10 +1,16 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, Document } from "mongoose";
 import { onlyLetters as names } from "../utils/regex";
 
 const addressSchema = new Schema({
   userId: {
     type: Types.ObjectId,
     ref: "User",
+    required: true,
+  },
+  type: {
+    type: String,
+    enum: ["shipping", "billing", "privat", "custom"],
+    required: true,
   },
   street: {
     type: String,
@@ -46,6 +52,8 @@ const addressSchema = new Schema({
     minLength: 4,
     maxLength: 5,
   },
+  country: String,
+  label: String,
 });
 
 const Address = model("Address", addressSchema);
@@ -53,9 +61,18 @@ const Address = model("Address", addressSchema);
 export default Address;
 
 export type AddressType = {
+  _id: string;
   userId: string;
   street: string;
   houseNumber: string;
   city: string;
   zipCode: string;
+  country?: string;
+  label?: string;
+  type: "shipping" | "billing" | "privat" | "custom";
 };
+
+export type AddressDocument = AddressType &
+  Document & {
+    _id: Types.ObjectId;
+  };

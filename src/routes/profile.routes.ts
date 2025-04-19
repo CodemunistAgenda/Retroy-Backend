@@ -1,9 +1,10 @@
 import { Router } from "express";
 
-import { createProfile } from "../controllers/profile.controller.ts";
+import { updatePersonalData } from "../controllers/profile.controller.ts";
+import { validateProfile } from "../middleware/profile.middleware.ts";
 
 const profileRoutes = Router();
 
-profileRoutes.post("/", createProfile);
+profileRoutes.post("/", validateProfile, updatePersonalData);
 
 export default profileRoutes;

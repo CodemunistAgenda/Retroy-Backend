@@ -1,11 +1,12 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { Types, type ObjectId } from "mongoose";
-import Payment from "../models/payment.model.ts";
 import { onlyLetters, numbersOnly, letterAndPunctuation } from "../utils/regex.ts";
 import Cart from "../models/cart.model.ts";
-import Address from "../models/address.model.ts";
+import User from "../models/user.model.ts";
+import Address, { type AddressType } from "../models/address.model.ts";
 import { errorResponse } from "../utils/helper.function.ts";
 import { type ProductDocument } from "../models/product.model.ts";
+import { validateAddress } from "./address.validation.ts";
 
 interface Cart {
   userId: string;
@@ -111,9 +112,7 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
       return address;
     };
     if (!shippingAddress || !billingAddress) {
-      const payment = await Payment.findOne({ userId: new Types.ObjectId(userId) })
-        .populate("shippingAddress")
-        .populate("billingAddress");
+      const payment = await User.findById(userId).populate("shippingAddress").populate("billingAddress");
 
       // hier ist die Frage ob die Adresse weitergeleitet wird wenn nur reference gespeichert ist
 
@@ -134,40 +133,8 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
       }
     }
 
-    const valitateAddress = (address: OrderAddress) => {
-      console.log("address", address);
-      let errors = [];
-
-      if (!address) {
-        errors.push("address is required");
-      }
-      const valString = (str: string, min: number, max: number, regex: RegExp) => {
-        // ACHTUNG DAS HIER IST INCONSISTENT ICH HABE EINEN FEHLER IN DER DB
-        // if (typeof str === "number") str = str.toString();
-        if (typeof str !== "string" || str.length < min || str.length > max || !regex.test(str)) {
-          errors.push(`Invalid string: ${str}`);
-        }
-      };
-
-      valString(address.street, 3, 50, onlyLetters);
-      valString(address.city, 3, 20, onlyLetters);
-      valString(address.zipCode, 4, 5, numbersOnly);
-      valString(address.houseNumber, 1, 4, numbersOnly);
-
-      if (errors.length > 0) {
-        return errors;
-      }
-
-      // notwendigkeit muss noch geprüft werden
-      // address.street = escape(address.street);
-      // address.city = escape(address.city);
-      // address.zipCode = escape(address.zipCode);
-      // address.houseNumber = escape(address.houseNumber);
-
-      return null;
-    };
-    const shippingAddressErrors = valitateAddress(shippingAddress);
-    const billingAddressErrors = valitateAddress(billingAddress);
+    const shippingAddressErrors = validateAddress(shippingAddress);
+    const billingAddressErrors = validateAddress(billingAddress);
 
     if (shippingAddressErrors) {
       errorResponse(res, 400, "Fehlerhafte Lieferadresse", shippingAddressErrors);
@@ -191,22 +158,17 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
 
     next();
   } catch (err) {
-    res.status(500).json({
-      message: "Fehler beim Abrufen der Adressen.",
-      error: err,
-    });
+    errorResponse(res, 500, "Fehler beim Validieren der Adresse", err instanceof Error ? err.message : "Unknown error");
   }
 };
 
 export const calculatePrices = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const { cart } = req.body;
-  // console.log("cart", cart);
   // produkte müssen nicht valiert werden, da es in der middleware validatedProductsforOrder gemacht wird
   try {
     const products: productItem[] = cart.items;
     const total = products.reduce((acc: number, item: productItem) => {
       if (!item.product.price || typeof item.product.price !== "number") {
-        console.log("if wurde erreicht");
         errorResponse(res, 400, "Error calculating prices", "price is missing");
         return acc; // Return the current accumulator value to avoid undefined
       }
