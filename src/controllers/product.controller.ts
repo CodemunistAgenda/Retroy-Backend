@@ -4,7 +4,7 @@ import { errorResponse, successResponse } from "../utils/helper.function";
 
 export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
   try {
-    let products: ProductDocument[] = await Product.find();
+    let products: ProductDocument[] = await Product.find().select("-deleted -__v -createdAt -isPublished -updatedAt");
 
     products = products.filter((product) => !product.deleted.isDeleted);
 

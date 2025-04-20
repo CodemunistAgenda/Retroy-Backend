@@ -93,8 +93,13 @@ export const validateProductsForOrder = async (req: AuthRequest, res: Response, 
     req.body.cart = userCart;
     console.log("succesfully validated products");
     next();
-  } catch (error) {
-    res.status(500).json({ message: "Fehler bei der Validierung der Produkte.", error });
+  } catch (err) {
+    return errorResponse(
+      res,
+      500,
+      "Fehler beim Validieren der Produkte",
+      err instanceof Error ? err.message : "Unknown error"
+    );
   }
 };
 
@@ -155,7 +160,7 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
 
     req.body.shippingAddress = shippingAddress;
     req.body.billingAddress = billingAddress;
-
+    console.log("succesfully validated address");
     next();
   } catch (err) {
     errorResponse(res, 500, "Fehler beim Validieren der Adresse", err instanceof Error ? err.message : "Unknown error");
@@ -164,6 +169,7 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
 
 export const calculatePrices = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const { cart } = req.body;
+  console.log("calculate prices");
   // produkte müssen nicht valiert werden, da es in der middleware validatedProductsforOrder gemacht wird
   try {
     const products: productItem[] = cart.items;
@@ -182,7 +188,7 @@ export const calculatePrices = (req: AuthRequest, res: Response, next: NextFunct
 
     req.body.totalAmount = total;
     req.body.taxAmount = taxes;
-
+    console.log("finished calculating prices");
     next();
   } catch (err) {
     errorResponse(res, 500, "error beim berechnen der preise", err);
@@ -192,6 +198,7 @@ export const calculatePrices = (req: AuthRequest, res: Response, next: NextFunct
 export const calculateShippingCost = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const { items } = req.body.cart;
   const shippingMethod = req.body.shippingMethod || "standard";
+  console.log("calculate shipping cost");
 
   // produkte müssen nicht valiert werden, da es in der middleware validatedProductsforOrder gemacht wird
   const deliverySurcharges = {
@@ -286,11 +293,11 @@ export const calculateShippingCost = (req: AuthRequest, res: Response, next: Nex
     shippingCost += finalsurcharges;
     specialsTotal += finalsurcharges;
 
-    req.body.specialTotal = specialsTotal;
+    req.body.specialTotal = Math.trunc(specialsTotal * 100) / 100;
     req.body.orderSpecials = surcharges;
-    req.body.shippingCost = shippingCost;
+    req.body.shippingCost = Math.trunc(shippingCost * 100) / 100;
     req.body.finalAmount = req.body.totalAmount + req.body.taxAmount + shippingCost;
-
+    console.log("finished calculating shipping cost");
     next();
   } catch (err) {
     errorResponse(res, 500, "Fehler beim berechnen der Versandkosten", err);
@@ -299,7 +306,7 @@ export const calculateShippingCost = (req: AuthRequest, res: Response, next: Nex
 
 export const validatePayment = (req: AuthRequest, res: Response, next: NextFunction): void => {
   const { paymentMethod, paymentReference } = req.body;
-
+  console.log("validate payment");
   console.log("paymentMethod", paymentMethod);
   console.log("paymentReference", paymentReference);
   if (!paymentMethod || !paymentReference)
@@ -326,7 +333,7 @@ export const validatePayment = (req: AuthRequest, res: Response, next: NextFunct
       return errorResponse(res, 400, "No payment reference in cash on delivery");
     }
   }
-
+  console.log("succesfully validated payment");
   next();
 };
 

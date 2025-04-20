@@ -12,6 +12,8 @@ const orderSchema = new Schema(
       {
         _id: { type: Types.ObjectId, ref: "Product", required: true },
         quantity: { type: Number, required: true },
+        name: { type: String, required: true },
+        unitPrice: { type: String, required: true },
       },
     ],
     taxAmount: { type: Number, required: true },
@@ -87,6 +89,8 @@ export type OrderDoc = Document & {
   products: {
     _id: Types.ObjectId;
     quantity: number;
+    name: string;
+    unitPrice: string;
   }[];
   taxAmount: number;
   totalAmount: number;

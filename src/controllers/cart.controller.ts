@@ -16,7 +16,10 @@ export const getUserCart = async (req: AuthRequest, res: Response): Promise<void
 
     if (!userId) return errorResponse(res, 400, "User ID is required");
 
-    const cart = await Cart.findOne({ user: userId }).populate("items.product");
+    const cart = await Cart.findOne({ user: userId }).populate({
+      path: "items.product",
+      select: "-deleted -isPublished -__v -createdAt -updatedAt -stock",
+    });
 
     if (!cart) {
       const newCart = new Cart({ user: userId, items: [] });
@@ -95,7 +98,7 @@ export const increaseQuantity = async (req: AuthRequest, res: Response): Promise
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
     if (!cart) return errorResponse(res, 404, "Cart not found");
 
-    const itemIndex = cart.items.findIndex((item) => item.product._id.toString() === id);
+    const itemIndex = cart.items.findIndex((item: any) => item.product._id.toString() === id);
     if (itemIndex === -1) return errorResponse(res, 404, "Item not found in cart");
 
     if (cart.items[itemIndex] !== undefined) {
@@ -137,7 +140,7 @@ export const decreaseQuantity = async (req: AuthRequest, res: Response): Promise
     const cart = await Cart.findOne({ user }).populate("items.product");
     if (!cart || cart.items.length === 0) return errorResponse(res, 404, "Cart not found or empty");
 
-    const itemIndex = cart.items.findIndex((item) => item.product._id.toString() === id);
+    const itemIndex = cart.items.findIndex((item: any) => item.product._id.toString() === id);
     if (itemIndex === -1) return errorResponse(res, 404, "Item not found in cart");
 
     if (cart.items[itemIndex]) {
@@ -172,7 +175,8 @@ export const removeFromCart = async (req: AuthRequest, res: Response): Promise<v
     const cart = await Cart.findOne({ user }).populate("items.product");
     if (!cart || cart.items.length === 0) return errorResponse(res, 404, "Cart not found or empty");
 
-    const itemIndex = cart.items.findIndex((item) => item.product._id.toString() === id);
+    // hier wird any verwendet weil ts nicht weiss das wir das object populaten
+    const itemIndex = cart.items.findIndex((item: any) => item.product._id.toString() === id);
     if (itemIndex === -1) return errorResponse(res, 404, "Item not found in cart");
 
     cart.items.splice(itemIndex, 1);

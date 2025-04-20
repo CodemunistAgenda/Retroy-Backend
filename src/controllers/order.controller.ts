@@ -1,6 +1,5 @@
 import Order from "../models/order.model";
 import { type Request, type Response } from "express";
-import Product from "../models/product.model";
 import { errorResponse, successResponse } from "../utils/helper.function";
 
 /**
@@ -36,9 +35,22 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     if (!["creditcard", "paypal", "banktransfer"].includes(paymentMethod))
       return errorResponse(res, 400, "Zahlungsmethode nicht verfügbar");
 
+    console.log("cart", cart.items);
+
+    const products = cart.items.map((item: any) => {
+      return {
+        _id: item.product._id,
+        quantity: item.quantity,
+        name: item.product.title,
+        unitPrice: `${item.product.price}€`,
+      };
+    });
+
+    console.log("products", products);
+
     const newOrder = new Order({
       user: id,
-      products: cart.items,
+      products,
       billingAddress,
       shippingAddress,
       shippingMethod,
@@ -54,10 +66,9 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
     await newOrder.save();
 
-    const products = req.body.cart.items;
-
     return successResponse(res, 201, "Bestellung erfolgreich erstellt.", newOrder);
   } catch (error) {
+    console.error("Error creating order:", error);
     return errorResponse(res, 500, "Fehler beim Erstellen der Bestellung.", error);
   }
 };

@@ -17,7 +17,7 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
 
     const verified = req.user?.verified;
 
-    if (verified === false) errorResponse(res, 403, "Please verify your account before creating a product.");
+    if (verified === false) return errorResponse(res, 403, "Please verify your account before creating a product.");
 
     const newProduct = new Product({
       title: product.title,
