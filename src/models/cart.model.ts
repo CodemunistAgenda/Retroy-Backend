@@ -1,4 +1,4 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, Document } from "mongoose";
 
 const cartSchema = new Schema(
   {
@@ -47,7 +47,7 @@ const cartSchema = new Schema(
   { timestamps: true }
 );
 
-export default model<CartType>("Cart", cartSchema);
+export default model("Cart", cartSchema);
 
 export type CartType = {
   user: Types.ObjectId;
@@ -60,6 +60,10 @@ export type CartType = {
   status: "open" | "ordered" | "cancelled";
   createdAt: Date;
   updatedAt: Date;
-  __v: number;
-  _id: Types.ObjectId;
 };
+
+export type CartDocument = CartType &
+  Document & {
+    _id: string;
+    __v: number;
+  };

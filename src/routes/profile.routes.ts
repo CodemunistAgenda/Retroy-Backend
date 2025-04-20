@@ -5,6 +5,7 @@ import { validateProfile } from "../middleware/profile.middleware.ts";
 
 const profileRoutes = Router();
 
+// important to know the update Function also create the Profile, but it would be useless if i write 2 funktions
 profileRoutes.post("/", validateProfile, updatePersonalData);
 profileRoutes.get("/details", getme);
 

@@ -1,10 +1,7 @@
 import { type Request, type Response } from "express";
-import { Types } from "mongoose";
 
 import Product, { type ProductDocument, type ProductType } from "../../models/product.model";
 import { errorResponse, successResponse } from "../../utils/helper.function";
-import { sendInformationsEmail } from "../../middleware/sendingMails";
-import type { UserDocument, UserType } from "../../models/user.model";
 
 interface AuthRequest extends Request {
   user?: {
@@ -14,36 +11,48 @@ interface AuthRequest extends Request {
   };
 }
 
-export const getProductsOfUser = async (req: Request, res: Response): Promise<void> => {
+export const createProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
-    const products: ProductDocument[] = await Product.find({ salesperson: new Types.ObjectId(id) });
+    const product: ProductDocument = req.body;
 
-    if (!products || products.length === 0) {
-      return errorResponse(res, 404, "No products found for this user.");
-    }
+    const verified = req.user?.verified;
 
-    return successResponse(res, 200, "Products of user:", products);
-  } catch (err) {
-    return errorResponse(res, 500, "Error while getting products of user", err);
+    if (verified === false) errorResponse(res, 403, "Please verify your account before creating a product.");
+
+    const newProduct = new Product({
+      title: product.title,
+      description: product.description,
+      price: product.price,
+      stock: product.stock,
+      color: product.color,
+      category: product.category,
+      weight: product.weight,
+      dimensions: product.dimensions,
+      specialDelivery: product.specialDelivery,
+      images: product.images,
+      mainCategory: product.mainCategory,
+      collectionName: product.collectionName,
+      subCollectionName: product.subCollectionName,
+      isPublished: product.isPublished,
+    });
+
+    const existingProduct = await Product.findOne({ title: product.title });
+
+    if (existingProduct) errorResponse(res, 400, "Product with this title already exists.");
+
+    const savedProduct = await newProduct.save();
+    if (!savedProduct) return errorResponse(res, 500, "Can't save product, creation failed.");
+
+    return successResponse(res, 201, "Product created", savedProduct);
+  } catch (error) {
+    return errorResponse(res, 500, "Internal Error, could not create the product", error);
   }
 };
 
 export const getProductById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { userDetails, userDetailsAll } = req.query;
-    let query = Product.findById(id);
-
-    if (userDetails) {
-      query = query.populate("salesperson", "username email");
-    }
-
-    if (userDetailsAll) {
-      query = query.populate("salesperson");
-    }
-
-    const product: ProductType | null = (await query.exec()) as ProductType | null;
+    const product: ProductType | null = (await Product.findById(id)) as ProductType | null;
     if (!product) return errorResponse(res, 404, "Product not found.");
 
     return successResponse(res, 200, "Product:", product);
@@ -52,7 +61,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
   }
 };
 
-export const updateUserProduct = async (req: Request, res: Response): Promise<void> => {
+export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const productData: ProductDocument = req.body;
@@ -63,48 +72,6 @@ export const updateUserProduct = async (req: Request, res: Response): Promise<vo
     });
     if (!dbProduct) return errorResponse(res, 404, "Product not found.");
 
-    let popProduct = await dbProduct.populate<{ salesperson: UserType }>("salesperson", "username email");
-
-    let user: UserType | null = popProduct.salesperson;
-
-    if (!user) {
-      errorResponse(res, 404, "User not found.");
-      return;
-    }
-
-    if (!user) return errorResponse(res, 404, "User not found.");
-
-    console.log(user);
-
-    let text = `
-      <h2>Dear ${user.username},</h2>
-      <p>We have updated your product with the following details:</p>
-      <ul>
-        <li><strong>Title:</strong> ${dbProduct.title}</li>
-        <li><strong>Description:</strong> ${dbProduct.description}</li>
-        <li><strong>Price:</strong> ${dbProduct.price}</li>
-        <li><strong>Stock:</strong> ${dbProduct.stock}</li>
-        <li><strong>Color:</strong> ${dbProduct.color}</li>
-        <li><strong>Category:</strong> ${dbProduct.category}</li>
-        <li><strong>Weight:</strong> ${dbProduct.weight}</li>
-        <li><strong>Dimensions:</strong> ${dbProduct.dimensions.width} x ${dbProduct.dimensions.height} x ${
-      dbProduct.dimensions.depth
-    }</li>
-        <li><strong>Main Category:</strong> ${dbProduct.mainCategory}</li>
-        <li><strong>Collection Name:</strong> ${dbProduct.collectionName}</li>
-        <li><strong>Special Delivery:</strong> ${dbProduct.specialDelivery.join(", ")}</li>
-        <li><strong>Sub Collection Name:</strong> ${dbProduct.subCollectionName}</li>
-        <li><strong>Is Published:</strong> ${dbProduct.isPublished}</li>
-      </ul>
-
-      <p>If you have any questions, feel free to contact us: <a href="mailto:norman.tetzlaff@gmail.com">Costumer Support </a></p>
-      <p>Best regards,</p>
-      <p>Retroy Customer Support</p>
-    `;
-
-    if (process.env.VERIFYING === "true") {
-      sendInformationsEmail(user.email, "Information from Retroy Costumer Support", text);
-    }
     return successResponse(res, 200, "Product updated successfully.", dbProduct);
   } catch (err) {
     return errorResponse(res, 500, "Error while updating product", err);
@@ -125,7 +92,6 @@ export const filterProducts = async (req: Request, res: Response): Promise<void>
       category,
       mainCategory,
       isPublished,
-      salesperson,
       deleted,
       spezialDelivery,
       sortBy = "createdAt",
@@ -148,9 +114,6 @@ export const filterProducts = async (req: Request, res: Response): Promise<void>
     if (category) filter.category = category;
     if (mainCategory) filter.mainCategory = mainCategory;
     if (isPublished) filter.isPublished = isPublished === "true";
-    if (salesperson && typeof salesperson === "string") {
-      filter.salesperson = new Types.ObjectId(salesperson);
-    }
 
     if (deleted !== undefined) {
       filter["deleted.isDeleted"] = deleted === "true";
@@ -179,7 +142,7 @@ export const filterProducts = async (req: Request, res: Response): Promise<void>
  * @info delete function für admins setzen die Admin id ein
  */
 
-export const deleteUserProduct = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
@@ -194,13 +157,6 @@ export const deleteUserProduct = async (req: AuthRequest, res: Response): Promis
       return errorResponse(res, 400, "Product already deleted.");
     }
 
-    const popProduct = await targetProduct.populate<{ salesperson: UserDocument }>("salesperson", "username email");
-
-    const user: UserDocument | null = popProduct.salesperson;
-    if (!user) {
-      return errorResponse(res, 404, "User not found.");
-    }
-
     targetProduct.deleted = {
       isDeleted: true,
       deletedAt: new Date(),
@@ -210,29 +166,13 @@ export const deleteUserProduct = async (req: AuthRequest, res: Response): Promis
 
     targetProduct.save();
 
-    let text = `
-      <h2>Dear ${user.username},</h2>
-      <p>We regret to inform you that your product named: ${targetProduct.title}, has been deleted</p>
-      <p>Reason: ${reason || "No reason provided"}</p>
-      <p>if you have any Questions feel free to contact us: <a href="mailto:norman.tetzlaff@gmail.com">Customer Support</a></p>
-      <br>
-
-      <p>Best regards,</p>
-      <p>Retroy Customer Support</p>
-    `;
-    if (process.env.VERIFYING === "true") {
-      sendInformationsEmail(user.email, "Information from Retroy Costumer Support", text);
-    }
-    console.log("targetProduct", targetProduct);
-    console.log("text", text);
-
     return successResponse(res, 200, "Product deleted successfully.", targetProduct);
   } catch (err) {
     return errorResponse(res, 500, "Error while deleting product", err);
   }
 };
 
-export const restoreUserProduct = async (req: AuthRequest, res: Response): Promise<void> => {
+export const restoreProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -246,17 +186,6 @@ export const restoreUserProduct = async (req: AuthRequest, res: Response): Promi
       return errorResponse(res, 400, "Product is not deleted.");
     }
 
-    const popProduct = await targetProduct.populate<{ salesperson: UserDocument }>("salesperson", "username email");
-
-    const user: UserDocument | null = popProduct.salesperson;
-    if (!user) {
-      return errorResponse(res, 404, "User not found.");
-    }
-
-    if (user.deleted.isDeleted) {
-      return errorResponse(res, 400, "Cant restore product, seller is deleted.");
-    }
-
     targetProduct.deleted = {
       isDeleted: false,
       deletedAt: null,
@@ -264,18 +193,7 @@ export const restoreUserProduct = async (req: AuthRequest, res: Response): Promi
       deletedBy: null,
     };
     targetProduct.save();
-    let text = `
-      <h2>Dear ${user.username},</h2>
-      <p>We are pleased to inform you that your product named: ${targetProduct.title}, has been restored.</p>
-      <p>If you have any questions, feel free to contact us: <a href="mailto:${process.env.SUPPORT_EMAIL}">Customer Support</a></p>
-      <p>Best regards,</p>
-      <p>Retroy Customer Support</p>
-    `;
-    if (process.env.VERIFYING === "true") {
-      sendInformationsEmail(user.email, "Information from Retroy Costumer Support", text);
-    }
-    console.log("targetProduct", targetProduct);
-    console.log("text", text);
+
     return successResponse(res, 200, "Product restored successfully.", targetProduct);
   } catch (err) {
     return errorResponse(res, 500, "Error while restoring product", err);

@@ -1,23 +1,22 @@
 import { Router } from "express";
 
 import {
-  getProductsOfUser,
   getProductById,
-  updateUserProduct,
+  updateProduct,
   filterProducts,
-  deleteUserProduct,
-  restoreUserProduct,
+  createProduct,
+  restoreProduct,
+  deleteProduct,
 } from "../../controllers/Admin/admin.product.controller";
-import { validateProductForUpdate } from "../../middleware/product.middleware";
-import { checkReason } from "../../middleware/Admin/admin.product.middleware";
+import { validateProduct, validateProductForUpdate, checkReason } from "../../middleware/Admin/product.middleware";
 
 const router = Router();
 
 router.get("/", filterProducts);
-router.get("/:userId/all", getProductsOfUser);
-router.get("/:productId/restore", restoreUserProduct);
+router.post("/", validateProduct, createProduct);
 router.get("/:productId", getProductById);
-router.patch("/:productId/update", validateProductForUpdate, updateUserProduct);
-router.post("/:productId/delete", checkReason, deleteUserProduct);
+router.get("/:productId/restore", restoreProduct);
+router.patch("/:productId/update", validateProductForUpdate, updateProduct);
+router.post("/:productId/delete", checkReason, deleteProduct);
 
 export default router;

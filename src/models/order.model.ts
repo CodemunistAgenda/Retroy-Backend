@@ -7,6 +7,7 @@ const orderSchema = new Schema(
       ref: "User",
       required: true,
     },
+    // hier werden die Produkte aus dem Warenkorb eingefügt
     products: [
       {
         _id: { type: Types.ObjectId, ref: "Product", required: true },
@@ -14,8 +15,10 @@ const orderSchema = new Schema(
       },
     ],
     taxAmount: { type: Number, required: true },
+    // hier wird der Gesamtbetrag des Warenkorbs gespeichert
     totalAmount: { type: Number, required: true },
     shippingCost: { type: Number, required: true },
+    // hier wird der Gesamtbetrag des Warenkorbs + Versandkosten + Steuern gespeichert
     finalAmount: { type: Number, required: true },
     shippingAddress: {
       street: { type: String, required: true },
@@ -46,12 +49,14 @@ const orderSchema = new Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["credit_card", "paypal", "bank_transfer", "cash_on_delivery"],
+      enum: ["credit_card", "paypal", "bank_transfer"],
       required: true,
     },
     paymentReference: {
       type: String,
-      required: true,
+      required: function (this: OrderDoc) {
+        return this.paymentMethod !== "bank_transfer";
+      },
     },
     paidAt: Date,
     cancel: {

@@ -111,11 +111,6 @@ const productSchema = new Schema(
       required: true,
       trim: true,
     },
-    salesperson: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     isPublished: {
       type: Boolean,
       default: true,
@@ -163,7 +158,6 @@ export type ProductType = {
   collectionName: string;
   specialDelivery: string[];
   subCollectionName: string;
-  salesperson: string;
   isPublished: boolean;
   deleted: {
     isDeleted: boolean;

@@ -157,8 +157,6 @@ export const login = async (req: LoginRequest, res: Response): Promise<void> => 
     let user;
 
     if (!req.user) {
-      console.log("body", req.user);
-      console.log("normal login");
       if (!password) {
         res.status(400).json({ message: "Enter a password!" });
         return;
@@ -189,7 +187,6 @@ export const login = async (req: LoginRequest, res: Response): Promise<void> => 
           res.status(401).json({ message: "Incorrect email, username or Passwort" });
           return;
         }
-        // das ist notwendig damit bei
       }
 
       const passwordMatch = await bcrypt.compare(password, user?.password as string);
