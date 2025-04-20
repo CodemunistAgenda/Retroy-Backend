@@ -1,23 +1,22 @@
 import { Router } from "express";
 
 import {
-  getProductsOfUser,
   getProductById,
-  updateUserProduct,
+  updateProduct,
   filterProducts,
-  deleteUserProduct,
+  createProduct,
+  restoreProduct,
+  deleteProduct,
 } from "../../controllers/Admin/admin.product.controller";
-import { validateProductForUpdate } from "../../middleware/product.middleware";
-import { checkReason } from "../../middleware/Admin/admin.product.middleware";
+import { validateProduct, validateProductForUpdate, checkReason } from "../../middleware/Admin/product.middleware";
 
 const router = Router();
 
 router.get("/", filterProducts);
-router.get("/:id/all", getProductsOfUser);
-router
-  .route("/:id")
-  .get(getProductById)
-  .patch(validateProductForUpdate, updateUserProduct)
-  .post(checkReason, deleteUserProduct);
+router.post("/", validateProduct, createProduct);
+router.get("/:productId", getProductById);
+router.get("/:productId/restore", restoreProduct);
+router.patch("/:productId/update", validateProductForUpdate, updateProduct);
+router.post("/:productId/delete", checkReason, deleteProduct);
 
 export default router;

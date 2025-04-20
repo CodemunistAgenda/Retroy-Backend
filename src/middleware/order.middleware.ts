@@ -1,31 +1,18 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { Types } from "mongoose";
-import Payment from "../models/payment.model.ts";
-import { onlyLetters, numbersOnly } from "../utils/regex.ts";
+import { Types, type ObjectId } from "mongoose";
+import { onlyLetters, numbersOnly, letterAndPunctuation } from "../utils/regex.ts";
 import Cart from "../models/cart.model.ts";
-import Address from "../models/address.model.ts";
+import User from "../models/user.model.ts";
+import Address, { type AddressType } from "../models/address.model.ts";
+import { errorResponse } from "../utils/helper.function.ts";
+import { type ProductDocument } from "../models/product.model.ts";
+import { validateAddress } from "./address.validation.ts";
 
-interface productItem {
-  product: any;
-  productId: string;
-  quantity: number;
-  price: number;
-  name: string;
-  stock: number;
-  weight?: number;
-  dimesions?: {
-    depth: number;
-    width: number;
-    height: number;
-  };
-  specialDelivery?: string[];
-  isPublished?: boolean;
-}
 interface Cart {
   userId: string;
   items: [
     {
-      product: productItem | Types.ObjectId;
+      product: ProductDocument | Types.ObjectId;
       quantity: number;
       priceAtAddition: number;
     }
@@ -34,6 +21,12 @@ interface Cart {
   totalWeight: number;
   totalVolume: number;
   totalVolumeWeight: number;
+}
+
+interface productItem {
+  product: ProductDocument;
+  quantity: number;
+  priceAtAddition: number;
 }
 
 interface OrderAddress {
@@ -54,63 +47,64 @@ interface orderSurcharges {
   count: number;
   price: number;
 }
-
+// tested und checked at 2025-19-04 00.19
 export const validateProductsForOrder = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  const errorResponse = (status: number, message: string) => {
-    res.status(status).json({ message });
-  };
+  console.log("validate Products for order");
   try {
     const userId = req.user?.id;
     const userCart = await Cart.findOne({ user: new Types.ObjectId(userId) }).populate("items.product");
 
-    if (!userCart) {
-      errorResponse(404, "Warenkorb nicht gefunden");
-      return;
-    }
-    // TODO: checken ob PriceAtAddition und der Product Preis gleich sind
+    if (!userCart) return errorResponse(res, 404, "Warenkorb nicht gefunden");
 
     const invalidProducts: any[] = [];
 
     for (const item of userCart.items) {
-      const product = item.product as productItem;
+      // Achtung: 'product' ist durch .populate() ein vollständiges Produkt-Dokument,
+      // aber TypeScript erkennt das nicht zuverlässig, daher temporär 'any'
+      const product = item.product as any;
 
       if (!product) {
         invalidProducts.push({
-          product: (product as productItem).productId,
+          product,
           reason: "Not available",
         });
         continue;
       }
 
-      if (product.stock < item.quantity) {
+      if (!product.isPublished) {
         invalidProducts.push({
-          reason: "Not enough stock",
-          product: (product as productItem).productId,
-          availableStock: product.stock,
-          requestedQuantity: item.quantity,
+          product: (product as ProductDocument).id,
+          reason: "not available",
         });
       }
 
-      if (!product.isPublished) {
+      if (product.deleted.isDeleted) {
         invalidProducts.push({
-          product: (product as productItem).productId,
+          product: (product as ProductDocument).id,
           reason: "not available",
         });
+      }
+
+      if (invalidProducts.length > 0) {
+        return errorResponse(res, 400, "Fehler: Ungültige Produkte im Warenkorb", invalidProducts);
       }
     }
 
     req.body.cart = userCart;
     console.log("succesfully validated products");
     next();
-  } catch (error) {
-    res.status(500).json({ message: "Fehler bei der Validierung der Produkte.", error });
+  } catch (err) {
+    return errorResponse(
+      res,
+      500,
+      "Fehler beim Validieren der Produkte",
+      err instanceof Error ? err.message : "Unknown error"
+    );
   }
 };
 
 export const getAndValidateAdress = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
-  const errorResponse = (status: number, message: string, error: any) => {
-    return res.status(status).json({ message, error });
-  };
+  console.log("get and validate address");
   try {
     const userId = req.user?.id;
 
@@ -123,9 +117,7 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
       return address;
     };
     if (!shippingAddress || !billingAddress) {
-      const payment = await Payment.findOne({ userId: new Types.ObjectId(userId) })
-        .populate("shippingAddress")
-        .populate("billingAddress");
+      const payment = await User.findById(userId).populate("shippingAddress").populate("billingAddress");
 
       // hier ist die Frage ob die Adresse weitergeleitet wird wenn nur reference gespeichert ist
 
@@ -142,51 +134,19 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
           shippingAddress = shippingAddress || (await resolveAddressIfNeeded(privat));
           billingAddress = billingAddress || (await resolveAddressIfNeeded(privat));
         }
-        if (!shippingAddress || !billingAddress) {
-          errorResponse(400, "Fehler: keine Adresse gefunden", null);
-          return;
-        }
+        if (!shippingAddress || !billingAddress) return errorResponse(res, 400, "Fehler: keine Adresse gefunden");
       }
     }
 
-    const valitateAddress = (address: OrderAddress) => {
-      let errors = [];
-
-      if (!address) {
-        errors.push("address is required");
-      }
-      const valString = (str: string, min: number, max: number, regex: RegExp) => {
-        if (typeof str !== "string" || str.length < min || str.length > max || !regex.test(str)) {
-          errors.push(`Invalid string: ${str}`);
-        }
-      };
-
-      valString(address.street, 3, 50, onlyLetters);
-      valString(address.city, 3, 20, onlyLetters);
-      valString(address.zipCode, 4, 5, numbersOnly);
-      valString(address.houseNumber, 1, 4, numbersOnly);
-
-      if (errors.length > 0) {
-        return errors;
-      }
-
-      // notwendigkeit muss noch geprüft werden
-      // address.street = escape(address.street);
-      // address.city = escape(address.city);
-      // address.zipCode = escape(address.zipCode);
-      // address.houseNumber = escape(address.houseNumber);
-
-      return null;
-    };
-    const shippingAddressErrors = valitateAddress(shippingAddress);
-    const billingAddressErrors = valitateAddress(billingAddress);
+    const shippingAddressErrors = validateAddress(shippingAddress);
+    const billingAddressErrors = validateAddress(billingAddress);
 
     if (shippingAddressErrors) {
-      errorResponse(400, "Fehlerhafte Lieferadresse", shippingAddressErrors);
+      errorResponse(res, 400, "Fehlerhafte Lieferadresse", shippingAddressErrors);
       return;
     }
     if (billingAddressErrors) {
-      errorResponse(400, "Fehlerhafte Rechnungsadresse", billingAddressErrors);
+      errorResponse(res, 400, "Fehlerhafte Rechnungsadresse", billingAddressErrors);
       return;
     }
 
@@ -200,66 +160,45 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
 
     req.body.shippingAddress = shippingAddress;
     req.body.billingAddress = billingAddress;
-
+    console.log("succesfully validated address");
     next();
   } catch (err) {
-    res.status(500).json({
-      message: "Fehler beim Abrufen der Adressen.",
-      error: err,
-    });
+    errorResponse(res, 500, "Fehler beim Validieren der Adresse", err instanceof Error ? err.message : "Unknown error");
   }
 };
 
 export const calculatePrices = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  const errorResponse = (status: number, message: string, error?: any): void => {
-    res.status(status).json({ message, error });
-  };
-
   const { cart } = req.body;
-  // console.log("cart", cart);
+  console.log("calculate prices");
   // produkte müssen nicht valiert werden, da es in der middleware validatedProductsforOrder gemacht wird
   try {
-    console.warn("reached the calculate prices");
-
     const products: productItem[] = cart.items;
-    // console.log("products", products);
     const total = products.reduce((acc: number, item: productItem) => {
-      //console.log("item in reduce", item);
-      // console.log("product preise", item.product.price);
-      // console.log("typeof item.product.price", typeof item.product.price);
-      // console.log("quantity", item.quantity);
       if (!item.product.price || typeof item.product.price !== "number") {
-        console.log("if wurde erreicht");
-        errorResponse(400, "Error calculating prices", "price is missing");
+        errorResponse(res, 400, "Error calculating prices", "price is missing");
         return acc; // Return the current accumulator value to avoid undefined
       }
-      // console.log("unitPrice", item.product.price);
       return acc + item.product.price * item.quantity;
-    }, 0); // Provide an initial value of 0
-    console.log("total", total);
+    }, 0);
     if (total <= 0) {
-      errorResponse(400, "Fehler beim berechnen des Preisess");
+      errorResponse(res, 400, "Fehler beim berechnen des Preisess");
     }
-    console.log("total", total);
 
     const taxes = total * 0.19; // Beispiel: 19% Mehrwertsteuer
-    console.log("taxes", taxes);
 
     req.body.totalAmount = total;
     req.body.taxAmount = taxes;
-
+    console.log("finished calculating prices");
     next();
   } catch (err) {
-    errorResponse(500, "error beim berechnen der preise", err);
+    errorResponse(res, 500, "error beim berechnen der preise", err);
   }
 };
 
 export const calculateShippingCost = (req: AuthRequest, res: Response, next: NextFunction): void => {
-  const errorResponse = (status: number, message: string, error?: any): void => {
-    res.status(status).json({ message, error });
-  };
   const { items } = req.body.cart;
   const shippingMethod = req.body.shippingMethod || "standard";
+  console.log("calculate shipping cost");
 
   // produkte müssen nicht valiert werden, da es in der middleware validatedProductsforOrder gemacht wird
   const deliverySurcharges = {
@@ -275,8 +214,7 @@ export const calculateShippingCost = (req: AuthRequest, res: Response, next: Nex
     const productweight =
       items.reduce((acc: number, item: productItem) => {
         if (!item.product.weight || typeof item.product.weight === undefined) {
-          errorResponse(400, "Error calculating shipping cost", "weight is missing");
-          return;
+          return errorResponse(res, 400, "Error calculating shipping cost", "weight is missing");
         }
         return acc + item.product.weight * item.quantity;
       }, 0) / 1000; // in kg
@@ -284,8 +222,7 @@ export const calculateShippingCost = (req: AuthRequest, res: Response, next: Nex
     const volumeweight = Math.trunc(
       items.reduce((acc: number, item: productItem) => {
         if (!item.product.dimensions || typeof item.product.dimensions === undefined) {
-          errorResponse(400, "Error calculating shipping cost", "Cant read dimensions");
-          return;
+          return errorResponse(res, 400, "Error calculating shipping cost", "Cant read dimensions");
         }
         const { depth, width, height } = item.product.dimensions;
         const volume = (depth * width * height) / 5000;
@@ -328,12 +265,9 @@ export const calculateShippingCost = (req: AuthRequest, res: Response, next: Nex
     items.forEach((item: productItem) => {
       if (item.product.specialDelivery && item.product.specialDelivery?.length > 0) {
         item.product.specialDelivery?.forEach((type: string) => {
-          console.log("type", type);
           const isValid = ["fragile", "oversize", "danger"].includes(type);
-          if (!isValid) {
-            errorResponse(400, "Error calculating shipping cost", "Invalid special delivery type");
-            return;
-          }
+          if (!isValid)
+            return errorResponse(res, 400, "Error calculating shipping cost", "Invalid special delivery type");
 
           if (deliverySurcharges[type as keyof typeof deliverySurcharges]) {
             const price =
@@ -359,16 +293,58 @@ export const calculateShippingCost = (req: AuthRequest, res: Response, next: Nex
     shippingCost += finalsurcharges;
     specialsTotal += finalsurcharges;
 
-    console.log("final shippingCost", shippingCost);
-
-    req.body.specialTotal = specialsTotal;
+    req.body.specialTotal = Math.trunc(specialsTotal * 100) / 100;
     req.body.orderSpecials = surcharges;
-    req.body.shippingCost = shippingCost;
+    req.body.shippingCost = Math.trunc(shippingCost * 100) / 100;
     req.body.finalAmount = req.body.totalAmount + req.body.taxAmount + shippingCost;
-    console.log("finalAmount", req.body.finalAmount);
-
+    console.log("finished calculating shipping cost");
     next();
   } catch (err) {
-    errorResponse(500, "Fehler beim berechnen der Versandkosten", err);
+    errorResponse(res, 500, "Fehler beim berechnen der Versandkosten", err);
   }
+};
+
+export const validatePayment = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  const { paymentMethod, paymentReference } = req.body;
+  console.log("validate payment");
+  console.log("paymentMethod", paymentMethod);
+  console.log("paymentReference", paymentReference);
+  if (!paymentMethod || !paymentReference)
+    return errorResponse(res, 400, "Fehler: Zahlungsmethode oder Referenz fehlt");
+
+  const validatedPaymentMethod = ["creditcard", "paypal", "bank_transfer", "cash_on_delivery"].includes(paymentMethod);
+
+  if (!validatedPaymentMethod) return errorResponse(res, 400, "Fehler: Zahlungsmethode nicht verfügbar");
+
+  if (paymentMethod !== "cash_on_delivery" && typeof paymentMethod === "string") {
+    const validator = {
+      creditcard: (ref: string) => /^pi_[a-zA-Z0-9]+$/.test(ref),
+      paypal: (ref: string) => /^[A-Z0-9]{17}$/.test(ref),
+      bank_transfer: (ref: string) => /^BANKTRANS_\d{8}_[A-Z0-9]{6}$/.test(ref),
+    };
+
+    if (paymentMethod in validator) {
+      const isValid = validator[paymentMethod as keyof typeof validator]?.(paymentReference);
+
+      if (!isValid) return errorResponse(res, 400, "Fehler: Ungültige Zahlungsreferenz");
+    }
+  } else {
+    if (paymentReference !== "N/A" && paymentReference !== null) {
+      return errorResponse(res, 400, "No payment reference in cash on delivery");
+    }
+  }
+  console.log("succesfully validated payment");
+  next();
+};
+
+export const valReason = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  const { reason } = req.body;
+
+  if (reason) {
+    if (typeof reason !== "string" || reason.length < 2 || reason.length > 500 || letterAndPunctuation.test(reason)) {
+      return errorResponse(res, 400, "Fehler: Grund ist ungültig");
+    }
+  }
+
+  next();
 };

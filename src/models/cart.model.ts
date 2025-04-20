@@ -1,4 +1,4 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, Document } from "mongoose";
 
 const cartSchema = new Schema(
   {
@@ -23,7 +23,10 @@ const cartSchema = new Schema(
         priceAtAddition: {
           type: Number,
           required: true,
+          default: 0, // Default value added to avoid validation errors
         },
+        // Disable automatic generation of _id for subdocuments in the items array
+        _id: false,
       },
     ],
     totalPrice: {
@@ -36,11 +39,15 @@ const cartSchema = new Schema(
       enum: ["open", "ordered", "cancelled"],
       default: "open",
     },
+    deleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-export default model<CartType>("Cart", cartSchema);
+export default model("Cart", cartSchema);
 
 export type CartType = {
   user: Types.ObjectId;
@@ -53,6 +60,10 @@ export type CartType = {
   status: "open" | "ordered" | "cancelled";
   createdAt: Date;
   updatedAt: Date;
-  __v: number;
-  _id: Types.ObjectId;
 };
+
+export type CartDocument = CartType &
+  Document & {
+    _id: string;
+    __v: number;
+  };

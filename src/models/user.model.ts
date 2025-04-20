@@ -65,24 +65,32 @@ const userSchema = new Schema({
   ],
   role: {
     type: String,
-    enum: ["user", "admin", "seller", "moderator"],
+    enum: ["user", "admin"],
     default: "user",
   },
   personalData: {
     type: Schema.Types.ObjectId,
     ref: "personalData",
   },
-  address: {
+  privateAddress: {
     type: Schema.Types.ObjectId,
     ref: "Address",
   },
-  payment: {
+  shippingAddress: {
     type: Schema.Types.ObjectId,
-    ref: "Payment",
+    ref: "Address",
+  },
+  billingAddress: {
+    type: Schema.Types.ObjectId,
+    ref: "Address",
+  },
+  customAddress: {
+    type: Schema.Types.ObjectId,
+    ref: "Address",
   },
 });
 
-export default model<UserDocument>("User", userSchema);
+export default model("User", userSchema);
 
 export type UserType = {
   _id: string;
@@ -99,10 +107,12 @@ export type UserType = {
   cart: string;
   orders: string[];
   favorites: string[];
-  role: "user" | "admin" | "seller" | "moderator";
+  role: "user" | "admin";
   personalData: string | PersonalDataType;
-  address: string;
-  payment: string;
+  privateAddress: string;
+  shippingAddress: string;
+  billingAddress: string;
+  customAddress: string;
 };
 
 export type UserDocument = Document<unknown, {}, UserType> & UserType;

@@ -1,24 +1,11 @@
 import { Router } from "express";
-import {
-  createProduct,
-  getAllProducts,
-  getProductById,
-  updateProduct,
-  deleteProduct,
-  restoreProductByOwner,
-} from "../controllers/product.controller";
+import { getAllProducts, getProductById } from "../controllers/product.controller";
 
-import { findProductById, validateProduct, validateProductForUpdate } from "../middleware/product.middleware.ts";
-import protect from "../middleware/jwtAuth.ts";
+import { findProductById } from "../middleware/Admin/product.middleware.ts";
 
 const router = Router();
 
-router.route("/").get(getAllProducts).post(protect, validateProduct, createProduct);
-router
-  .route("/:id")
-  .get(findProductById, getProductById)
-  .put(protect, findProductById, validateProductForUpdate, updateProduct)
-  .delete(protect, findProductById, deleteProduct)
-  .post(protect, findProductById, restoreProductByOwner);
+router.route("/").get(getAllProducts);
+router.route("/:id").get(findProductById, getProductById);
 
 export default router;
