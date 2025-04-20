@@ -55,63 +55,54 @@ export const updatePersonalData = async (req: ProfileRequest, res: Response): Pr
 
     if (privateAddress) {
       addresses.push({
-        insertOne: {
-          document: {
-            userId,
-            type: "privat",
-            ...privateAddress,
-          },
+        updateOne: {
+          filter: { userId, type: "privat" },
+          update: { $set: { ...privateAddress } },
+          upsert: true,
         },
       });
     }
 
     if (billingAddress) {
       addresses.push({
-        insertOne: {
-          document: {
-            userId,
-            type: "billing",
-            ...billingAddress,
-          },
+        updateOne: {
+          filter: { userId, type: "billing" },
+          update: { $set: { ...billingAddress } },
+          upsert: true,
         },
       });
     }
 
     if (shippingAddress) {
       addresses.push({
-        insertOne: {
-          document: {
-            userId,
-            type: "shipping",
-            ...shippingAddress,
-          },
+        updateOne: {
+          filter: { userId, type: "shipping" },
+          update: { $set: { ...shippingAddress } },
+          upsert: true,
         },
       });
     }
 
     if (customAddress) {
       addresses.push({
-        insertOne: {
-          document: {
-            userId,
-            type: "custom",
-            ...customAddress,
-          },
+        updateOne: {
+          filter: { userId, type: "custom" },
+          update: { $set: { ...customAddress } },
+          upsert: true,
         },
       });
     }
 
-    let insertesAddresses: Document[] = [];
+    let updatedAddresses: Document[] = [];
 
     if (addresses.length > 0) {
-      const result = await Address.bulkWrite(addresses);
-
-      insertesAddresses = await Address.find({ userId }).sort({ _id: -1 }).limit(addresses.length);
+      await Address.bulkWrite(addresses);
+      updatedAddresses = await Address.find({ userId }).sort({ _id: -1 }).limit(addresses.length);
     }
 
     user.personalData = profil._id;
 
-    for (const addr of insertesAddresses as any) {
+    for (const addr of updatedAddresses as any) {
       if (addr.type === "privat") user.privateAddress = addr._id;
       if (addr.type === "billing") user.billingAddress = addr._id;
       if (addr.type === "shipping") user.shippingAddress = addr._id;
@@ -121,6 +112,46 @@ export const updatePersonalData = async (req: ProfileRequest, res: Response): Pr
     await user.save();
 
     successResponse(res, 201, "User datas Updates within the profile", user);
+  } catch (err) {
+    errorResponse(res, 500, "Server error", err instanceof Error ? err.message : "Unknown error");
+  }
+};
+
+export const getme = async (req: ProfileRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id; // ID from the token
+
+    const user = await User.findById(userId)
+
+      // Tel number muss noch encrypet werden
+      .populate({
+        path: "personalData",
+        select: "-__v -deleted -userId -_id -createdAt -updatedAt",
+      })
+      .populate({
+        path: "privateAddress",
+        select: "houseNumber street zipCode city -_id",
+      })
+      .populate({
+        path: "billingAddress",
+        select: "houseNumber street zipCode city -_id",
+      })
+      .populate({
+        path: "shippingAddress",
+        select: "houseNumber street zipCode city -_id",
+      })
+      .populate({
+        path: "customAddress",
+        select: "houseNumber street zipCode city -_id",
+      })
+      .select("-password -__v -deleted -role -_id -createdAt -updatedAt");
+
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    successResponse(res, 200, "User profile", user);
   } catch (err) {
     errorResponse(res, 500, "Server error", err instanceof Error ? err.message : "Unknown error");
   }
