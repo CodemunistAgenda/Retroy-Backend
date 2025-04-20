@@ -26,5 +26,4 @@ export default WhiteList;
 export type WhiteListType = {
   email: string;
   username: string;
-  password: string;
 };
