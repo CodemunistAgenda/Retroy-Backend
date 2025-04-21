@@ -5,20 +5,53 @@ import { errorResponse } from "../utils/helper.function";
 import { validateAddress } from "./address.validation";
 import User, { type UserDocument } from "../models/user.model";
 import { type AddressDocument } from "../models/address.model";
+import type { Document } from "mongoose";
 
 interface AuthRequest extends Request {
   user?: {
     id: string;
   };
+  shippingPreview?: Array<{
+    shippingMethod: string;
+    weightKg: number;
+    baseCost: number;
+    totalCost: number;
+    specials: number;
+    surcharges: Array<{
+      type: string;
+      count: number;
+      price: number;
+    }>;
+  }>;
 }
 
 interface productItem {
   product: {
     _id: string;
     title: string;
-    quantity: number;
-    priceAtAddition: number;
+    price: number;
+    weight: number;
+    dimensions: {
+      width: number;
+      height: number;
+      depth: number;
+    };
+    specialDelivery: string[];
+    isPublished: boolean;
   };
+  quantity: number;
+}
+interface orderSurcharges {
+  type: string;
+  count: number;
+  price: number;
+}
+
+interface IAddress {
+  houseNumber: string;
+  street: string;
+  zipCode: string;
+  city: string;
 }
 
 export const findCartMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -121,7 +154,7 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
   try {
     const userId = req.user?.id;
 
-    const user: UserDocument | null = await User.findById(userId)
+    const user = (await User.findById(userId)
       .populate({
         path: "shippingAddress",
         select: "houseNumber street zipCode city",
@@ -133,11 +166,12 @@ export const getAndValidateAdress = async (req: AuthRequest, res: Response, next
       .populate({
         path: "privateAddress",
         select: "houseNumber street zipCode city",
-      });
+      })) as any;
+    // wir casten hier auf any, da ts nicht versteht dass die populate funktionen immer ein address document zurückgeben
 
-    let billingAddress = user?.billingAddress as any;
-    let shippingAddress = user?.shippingAddress as any;
-    let privateAddress = user?.privateAddress as any;
+    let billingAddress = user?.billingAddress;
+    let shippingAddress = user?.shippingAddress;
+    let privateAddress = user?.privateAddress;
 
     const shippingAddressErrors = user?.shippingAddress ? validateAddress(user.shippingAddress) : null;
     const billingAddressErrors = user?.billingAddress ? validateAddress(user?.billingAddress) : null;
@@ -182,6 +216,7 @@ export const calculatePrices = (req: AuthRequest, res: Response, next: NextFunct
   try {
     const products: productItem[] = cart.items;
     const total = products.reduce((acc: number, item: productItem) => {
+      console.log("item", item);
       if (!item.product.price || typeof item.product.price !== "number") {
         errorResponse(res, 400, "Error calculating prices", "price is missing");
         return acc; // Return the current accumulator value to avoid undefined
@@ -248,6 +283,7 @@ export const generateShippingPreview = (req: AuthRequest, res: Response, next: N
     const previewResults = shippingMethods.map((method) => {
       let shippingCost = baseShipping();
       let specialsTotal = 0;
+
       const surcharges: orderSurcharges[] = [];
 
       // Express und Overnight Zuschläge

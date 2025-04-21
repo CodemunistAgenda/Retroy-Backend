@@ -230,8 +230,6 @@ export const preview = async (req: AuthRequest, res: Response): Promise<void> =>
   try {
     const { cart, billingAddress, privateAddress, shippingAddress, totalAmount, taxAmount } = req.body;
 
-    console.log(req.body);
-
     const cartPreview = {
       item: cart.items,
       totalPrice: cart.totalPrice,
