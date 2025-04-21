@@ -100,6 +100,8 @@ const validateFields = (data: any, isUpdate = false) => {
 };
 
 export const validateProduct = (req: Request, res: Response, next: NextFunction): void => {
+  console.log("validateProduct: ");
+  console.log("req.body: ", req.body);
   const errors = validateFields(req.body);
 
   if (errors.length > 0) {

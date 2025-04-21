@@ -9,6 +9,7 @@ interface AuthRequest extends Request {
   user?: {
     id: string;
   };
+  shippingPreview?: any; // Replace 'any' with the appropriate type if known
 }
 
 export const getUserCart = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -228,6 +229,9 @@ export const clearCart = async (req: AuthRequest, res: Response): Promise<void> 
 
 export const preview = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const shippingPreview = req.shippingPreview;
+    if (!shippingPreview) return errorResponse(res, 400, "Shipping preview not found");
+
     const { cart, billingAddress, privateAddress, shippingAddress, totalAmount, taxAmount } = req.body;
 
     const cartPreview = {
@@ -238,7 +242,7 @@ export const preview = async (req: AuthRequest, res: Response): Promise<void> =>
       privateAddress: privateAddress,
       totalAmout: totalAmount,
       taxAmount: taxAmount,
-      shippingPreview: req.shippingPreview,
+      shippingPreview: shippingPreview,
     };
 
     return successResponse(res, 200, "cartPreview", cartPreview);

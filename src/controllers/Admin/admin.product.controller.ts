@@ -13,27 +13,19 @@ interface AuthRequest extends Request {
 
 export const createProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    console.log("i am in create product");
     const product: ProductDocument = req.body;
 
     const verified = req.user?.verified;
 
     if (verified === false) return errorResponse(res, 403, "Please verify your account before creating a product.");
 
+    console.log("req.files", req.files);
+    const images = (req.files as Express.Multer.File[]).map((file) => file.path);
+    console.log("images", images);
     const newProduct = new Product({
-      title: product.title,
-      description: product.description,
-      price: product.price,
-      stock: product.stock,
-      color: product.color,
-      category: product.category,
-      weight: product.weight,
-      dimensions: product.dimensions,
-      specialDelivery: product.specialDelivery,
-      images: product.images,
-      mainCategory: product.mainCategory,
-      collectionName: product.collectionName,
-      subCollectionName: product.subCollectionName,
-      isPublished: product.isPublished,
+      ...product,
+      images: images,
     });
 
     const existingProduct = await Product.findOne({ title: product.title });

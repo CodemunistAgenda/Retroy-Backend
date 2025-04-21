@@ -35,8 +35,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     if (!["creditcard", "paypal", "banktransfer"].includes(paymentMethod))
       return errorResponse(res, 400, "Zahlungsmethode nicht verfügbar");
 
-    console.log("cart", cart.items);
-
     const products = cart.items.map((item: any) => {
       return {
         _id: item.product._id,
