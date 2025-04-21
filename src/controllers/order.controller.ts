@@ -94,7 +94,7 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
-export const getAllOrdersOfUser = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAllOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
     const orders = await Order.find({ user: userId }).populate("user").populate("products.productId");
