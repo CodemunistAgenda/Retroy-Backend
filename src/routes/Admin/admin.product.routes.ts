@@ -17,7 +17,12 @@ router.get("/", filterProducts);
 router.post("/", upload.fields([{ name: "images", maxCount: 5 }]), validateProduct, createProduct);
 router.get("/:productId", getProductById);
 router.get("/:productId/restore", restoreProduct);
-router.patch("/:productId/update", validateProductForUpdate, updateProduct);
+router.patch(
+  "/:productId/update",
+  upload.fields([{ name: "images", maxCount: 5 }]),
+  validateProductForUpdate,
+  updateProduct
+);
 router.post("/:productId/delete", checkReason, deleteProduct);
 
 export default router;

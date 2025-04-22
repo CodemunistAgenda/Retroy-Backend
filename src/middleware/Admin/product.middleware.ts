@@ -105,11 +105,6 @@ export const validateProduct = async (req: Request, res: Response, next: NextFun
     res.status(400).json({ message: errors.join(", \n") });
     return;
   }
-
-  const existingProduct = await Product.findOne({ title: req.body.title });
-
-  if (existingProduct) errorResponse(res, 400, "Product with this title already exists.");
-
   console.log("end validateProduct");
   next();
 };

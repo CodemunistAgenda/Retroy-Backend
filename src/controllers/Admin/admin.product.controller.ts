@@ -52,19 +52,33 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
     return errorResponse(res, 500, "Error while getting product by id", err);
   }
 };
-
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const { productId } = req.params;
     const productData: ProductDocument = req.body;
 
-    const dbProduct: ProductDocument | null = await Product.findByIdAndUpdate(id, productData, {
-      new: true,
-      runValidators: true,
-    });
+    console.log("productData", productData);
+
+    // Hole das Produkt aus der DB
+    const dbProduct: any = await Product.findById(productId);
     if (!dbProduct) return errorResponse(res, 404, "Product not found.");
 
-    return successResponse(res, 200, "Product updated successfully.", dbProduct);
+    // Hol dir die neuen Bilder aus dem Upload, wenn vorhanden
+    const uploadedImages = req.files?.images as Express.Multer.File[] | undefined;
+    const images = uploadedImages?.map((file) => file.path) || []; // Leere Liste, falls keine neuen Bilder hochgeladen werden
+
+    // wichtig alle Bilder müssen mit gesendet werden
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: productId },
+      {
+        ...productData,
+        images: images, // Ersetze alle Bilder
+      },
+      { new: true } // Das neue Produkt wird zurückgegeben
+    );
+
+    // Erfolgreiche Antwort mit dem aktualisierten Produkt
+    return successResponse(res, 200, "Product updated successfully.", updatedProduct);
   } catch (err) {
     return errorResponse(res, 500, "Error while updating product", err);
   }
