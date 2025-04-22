@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Produkt Upload</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+
+        label {
+            display: block;
+            margin-top: 1rem;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.5rem;
+            margin-top: 0.3rem;
+        }
+
+        button {
+            margin-top: 1.5rem;
+            padding: 0.5rem 1rem;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Produkt-Formular</h1>
+    <form id="productForm" enctype="multipart/form-data">
+        <label>Titel: <input type="text" name="title" value="Klebestreifen" /></label>
+        <label>Beschreibung: <textarea name="description">Sind klebrige Steifen</textarea></label>
+        <label>Preis: <input type="number" name="price" value="102" /></label>
+        <label>Stock: <input type="number" name="stock" value="14" /></label>
+        <label>Farbe: <input type="text" name="color" value="transparent" /></label>
+        <label>Kategorie: <input type="text" name="category" value="kleber" /></label>
+        <label>Hauptkategorie: <input type="text" name="mainCategory" value="Arbeitsmaterialieren" /></label>
+        <label>Collection: <input type="text" name="collectionName" value="Heimwerken" /></label>
+        <label>Sub-Collection: <input type="text" name="subCollectionName" value="musik" /></label>
+        <label>Gewicht (g): <input type="number" name="weight" value="120" /></label>
+
+        <label>Breite: <input type="number" name="width" value="2" /></label>
+        <label>Höhe: <input type="number" name="height" value="21" /></label>
+        <label>Tiefe: <input type="number" name="depth" value="5" /></label>
+
+        <label>Special Delivery:
+            <select name="specialDelivery" multiple>
+                <option value="danger" selected>danger</option>
+                <option value="fragile" selected>fragile</option>
+                <option value="heavy">heavy</option>
+            </select>
+        </label>
+
+        <label>Bilder auswählen (max 5):
+            <input type="file" name="images" accept="image/*" multiple />
+        </label>
+
+        <button type="submit">Senden</button>
+    </form>
+
+    <script>
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+
+            // Strukturierte Felder für "dimensions"
+            formData.append("dimensions[width]", form.width.value);
+            formData.append("dimensions[height]", form.height.value);
+            formData.append("dimensions[depth]", form.depth.value);
+
+            // Mehrfachauswahl für "specialDelivery"
+            const deliveryOptions = Array.from(form.specialDelivery.selectedOptions).map(opt => opt.value);
+            formData.delete("specialDelivery"); // Vorher entfernen, sonst Mehrfacheintrag
+            deliveryOptions.forEach(val => formData.append("specialDelivery", val));
+
+            // Logging der Daten vor dem Absenden (optional)
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ':', pair[1]);
+            }
+
+            try {
+                const response = await fetch("http://localhost:4001/api/admin/products", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const contentType = response.headers.get("content-type");
+
+                if (contentType && contentType.includes("application/json")) {
+                    const result = await response.json();
+                    console.log("Antwort (JSON):", result);
+                    alert("Produkt erfolgreich hochgeladen!");
+                } else {
+                    const result = await response.text();
+                    console.warn("Antwort (TEXT):", result);
+                    alert("Antwort ist kein JSON – siehe Konsole");
+                }
+            } catch (err) {
+                console.error("Fehler beim Senden:", err);
+                alert("Sende-Fehler – siehe Konsole");
+            }
+        });
+    </script>
+
+</body>
+</html>

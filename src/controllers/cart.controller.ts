@@ -1,13 +1,15 @@
 import { type Request, type Response } from "express";
 
-import Cart from "../models/cart.model.ts";
+import Cart, { type CartDocument } from "../models/cart.model.ts";
 import Product from "../models/product.model.ts";
 import { errorResponse, successResponse } from "../utils/helper.function.ts";
+import User from "../models/user.model.ts";
 
 interface AuthRequest extends Request {
   user?: {
     id: string;
   };
+  shippingPreview?: any; // Replace 'any' with the appropriate type if known
 }
 
 export const getUserCart = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -71,6 +73,7 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
         product: productId,
         quantity,
         priceAtAddition: priceNow,
+        name: product.title,
       });
     }
 
@@ -221,5 +224,29 @@ export const clearCart = async (req: AuthRequest, res: Response): Promise<void> 
     return successResponse(res, 200, "Cart cleared", cart);
   } catch (err) {
     return errorResponse(res, 500, "Error clearing cart", err instanceof Error ? err.message : err);
+  }
+};
+
+export const preview = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const shippingPreview = req.shippingPreview;
+    if (!shippingPreview) return errorResponse(res, 400, "Shipping preview not found");
+
+    const { cart, billingAddress, privateAddress, shippingAddress, totalAmount, taxAmount } = req.body;
+
+    const cartPreview = {
+      item: cart.items,
+      totalPrice: cart.totalPrice,
+      billingAddress: billingAddress,
+      shippingAddress: shippingAddress,
+      privateAddress: privateAddress,
+      totalAmout: totalAmount,
+      taxAmount: taxAmount,
+      shippingPreview: shippingPreview,
+    };
+
+    return successResponse(res, 200, "cartPreview", cartPreview);
+  } catch (err) {
+    return errorResponse(res, 500, "internal Servererror", err instanceof Error ? err.message : "unknown error");
   }
 };

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createOrder, getOrderById, cancelOrder, getAllOrdersOfUser } from "../controllers/order.controller";
+import { createOrder, getOrderById, cancelOrder, getAllOrders } from "../controllers/order.controller";
 
 import {
   validateProductsForOrder,
@@ -24,6 +24,6 @@ router
     createOrder
   );
 
-router.route("/:id").get(getAllOrdersOfUser).get(getOrderById).patch(valReason, cancelOrder);
+router.route("/:id").get(getAllOrders).get(getOrderById).patch(valReason, cancelOrder);
 
 export default router;

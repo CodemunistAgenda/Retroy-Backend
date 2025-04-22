@@ -35,8 +35,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
     if (!["creditcard", "paypal", "banktransfer"].includes(paymentMethod))
       return errorResponse(res, 400, "Zahlungsmethode nicht verfügbar");
 
-    console.log("cart", cart.items);
-
     const products = cart.items.map((item: any) => {
       return {
         _id: item.product._id,
@@ -94,7 +92,7 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
-export const getAllOrdersOfUser = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAllOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
     const orders = await Order.find({ user: userId }).populate("user").populate("products.productId");
