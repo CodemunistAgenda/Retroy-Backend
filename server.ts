@@ -30,28 +30,26 @@ console.log("Whitelist created");
 
 /* app.use(
   cors({
-    origin: "http://localhost:3000", // frontend URL
+    origin: "http://localhost:4001", // frontend URL
     credentials: true,
   })
 ); */
 
 app.use(cors());
 
-app.use(express.json());
+app.use((req, res, next) => {
+  const contentType = req.headers["content-type"] || "";
+  if (contentType.startsWith("application/json")) {
+    express.json()(req, res, next);
+  } else {
+    next(); // skip for multipart/form-data
+  }
+});
+
 app.use(cookieParser()); // need to read the cookies to get the refresh token
 // app.use(Limiter);  // Out of service for development
 
 // here are the router routes added
-
-app.post("/", (req, res) => {
-  console.log("req vom Frontend");
-  console.log("req.body: ", req.body);
-
-  res.status(200).json({
-    message: "Hello from the API",
-    data: req.body,
-  });
-});
 
 app.use("/api", routes);
 

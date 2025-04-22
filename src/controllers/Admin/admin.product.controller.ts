@@ -9,6 +9,10 @@ interface AuthRequest extends Request {
     role?: ["user", "admin", "seller", "moderator"];
     verified?: boolean;
   };
+
+  files?: {
+    images?: Express.Multer.File[];
+  };
 }
 
 export const createProduct = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -20,17 +24,13 @@ export const createProduct = async (req: AuthRequest, res: Response): Promise<vo
 
     if (verified === false) return errorResponse(res, 403, "Please verify your account before creating a product.");
 
-    console.log("req.files", req.files);
-    const images = (req.files as Express.Multer.File[]).map((file) => file.path);
+    const images = (req.files?.images as Express.Multer.File[]).map((file) => file.path);
+
     console.log("images", images);
     const newProduct = new Product({
       ...product,
       images: images,
     });
-
-    const existingProduct = await Product.findOne({ title: product.title });
-
-    if (existingProduct) errorResponse(res, 400, "Product with this title already exists.");
 
     const savedProduct = await newProduct.save();
     if (!savedProduct) return errorResponse(res, 500, "Can't save product, creation failed.");

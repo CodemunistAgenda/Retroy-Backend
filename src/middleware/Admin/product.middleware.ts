@@ -40,6 +40,8 @@ const validateFields = (data: any, isUpdate = false) => {
 
   const valNum = (field: string, minVal: number, maxVal: number) => {
     if (isUpdate && data[field] === undefined) return;
+    data[field] = Number(data[field]);
+
     if (
       data[field] !== undefined &&
       (typeof data[field] !== "number" || (data[field] < minVal && data[field] > maxVal))
@@ -48,17 +50,9 @@ const validateFields = (data: any, isUpdate = false) => {
     }
   };
 
-  const valArr = (field: string) => {
-    if (isUpdate && data[field] === undefined) return;
-    if (
-      !Array.isArray(data[field] || data[field].length < 1) ||
-      data[field].some((item: any) => typeof item !== "string")
-    ) {
-      errors.push(`${field} has to be an array of strings`);
-    }
-  };
   const valDimensions = (field: string, min: number, max: number) => {
     if (isUpdate && data[field] === undefined) return;
+    data[field] = JSON.parse(data[field]);
 
     ["width", "height", "depth"].forEach((dim) => {
       const val = data[field][dim];
@@ -69,7 +63,12 @@ const validateFields = (data: any, isUpdate = false) => {
   };
   const valSpecialDelivery = (field: string) => {
     if (data[field] === undefined) return;
-    console.log("specialDelivery: ", data[field]);
+
+    // Wenn es KEIN Array ist, aber ein Objekt
+    if (typeof data[field] === "object" && !Array.isArray(data[field])) {
+      data[field] = Object.values(data[field]).map((item) => String(item).trim());
+    }
+
     if (
       !Array.isArray(data[field]) ||
       data[field].some((item: any) => typeof item !== "string" || !["oversize", "fragile", "danger"].includes(item))
@@ -81,7 +80,6 @@ const validateFields = (data: any, isUpdate = false) => {
   valString("title", 2, 50);
   valDesc("description", 2, 500);
   valNum("price", 0, 100000);
-  valArr("images");
   valNum("weight", 0, 100000);
   valDimensions("dimensions", 0, 10000);
   valNum("stock", 1, 10000);
@@ -99,16 +97,20 @@ const validateFields = (data: any, isUpdate = false) => {
   return errors;
 };
 
-export const validateProduct = (req: Request, res: Response, next: NextFunction): void => {
-  console.log("validateProduct: ");
-  console.log("req.body: ", req.body);
+export const validateProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  console.log("start validateProduct");
   const errors = validateFields(req.body);
 
   if (errors.length > 0) {
-    res.status(400).json({ message: errors.join(", ") });
+    res.status(400).json({ message: errors.join(", \n") });
     return;
   }
 
+  const existingProduct = await Product.findOne({ title: req.body.title });
+
+  if (existingProduct) errorResponse(res, 400, "Product with this title already exists.");
+
+  console.log("end validateProduct");
   next();
 };
 
