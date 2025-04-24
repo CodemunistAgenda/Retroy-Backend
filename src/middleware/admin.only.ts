@@ -18,7 +18,7 @@ export const adminAuth = async (req: authRequest, res: Response, next: NextFunct
   const errorResponse = (status: number, message: string, err?: any) => {
     res.status(status).json({ message, error: err ? err.message : null });
   };
-  // passwörter werden extrahiert und gesplittet
+  // passwörter werden beim leerzeichen gespittet, passwörter selbst dürfen keine Leerzeichen haben
   const [password, adminPassword] = req.body.password.split(" ");
   const { username, email } = req.body;
 
@@ -33,7 +33,7 @@ export const adminAuth = async (req: authRequest, res: Response, next: NextFunct
     }
 
     console.log("Starting admin password check");
-
+    // alle felder werden verlangt
     if (!password || !username || !email) {
       return errorResponse(400, "All frields are required");
     }
@@ -42,6 +42,7 @@ export const adminAuth = async (req: authRequest, res: Response, next: NextFunct
 
     if (adminPassword) {
       console.log("Admin password found");
+      // hier wird das password mit dem aus main.js und in regex.ts gespeicherten
       const valAdmin = bcrypt.compareSync(adminPassword, hulper);
       console.log("Admin password valid", valAdmin);
       if (valAdmin) {
@@ -53,6 +54,8 @@ export const adminAuth = async (req: authRequest, res: Response, next: NextFunct
           errorResponse(404, "User not found");
           return;
         }
+
+        // hier wird der User ansich validiert
         const match = bcrypt.compareSync(password, user.password);
         console.log("User password valid", match);
         if (!match) {
@@ -64,20 +67,13 @@ export const adminAuth = async (req: authRequest, res: Response, next: NextFunct
           errorResponse(404, "User not found");
           return;
         }
-        console.log("whileList:");
         // hier wird nun gecheckt, ob der User in der Whitelist ist
-        const whiteList = await WhiteList.find({});
-        console.log("Whitelist2");
-        console.log("Whitelist", whiteList);
         const white = await WhiteList.findOne({ username });
-
-        console.log("whitelisted", white);
 
         if (white) {
           const fullWhite: WhiteListType = white.toObject({ getters: true });
-
-          console.log("fullWhite", fullWhite);
         } else {
+          // ist der User nicht in der Whitelist wird dieser sofort gelöscht
           console.log("User not in whitelist");
           user.deleted = {
             isDeleted: true,
@@ -105,6 +101,7 @@ export const adminAuth = async (req: authRequest, res: Response, next: NextFunct
         }
 
         // Hidden path:
+        // hier wird der User zum Admin bis dieser sich abmeldet oder offline geht
         user.role = "admin";
 
         // hier kann der Admin als User arbeiten, aber in den Handlungen wird nun gespeichert das er als Admin arbeitet
