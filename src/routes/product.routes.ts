@@ -6,6 +6,6 @@ import { findProductById } from "../middleware/Admin/product.middleware.ts";
 const router = Router();
 
 router.route("/").get(getAllProducts);
-router.route("/:id").get(findProductById, getProductById);
+router.get("/:id", findProductById, getProductById);
 
 export default router;

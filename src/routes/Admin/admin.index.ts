@@ -16,6 +16,7 @@ router.use("/users", userRouter);
 // hier werden die Produkte bearbeitet (create, update, delete)
 router.use("/products", productRouter);
 
+// hier ist nur eine Route hinter, aber damit es einheitlich ist habe ich es beibehalten
 router.use("/clean", cleanRouter);
 
 export default router;

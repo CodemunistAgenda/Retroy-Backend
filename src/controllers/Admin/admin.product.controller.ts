@@ -9,22 +9,20 @@ interface AuthRequest extends Request {
     role?: ["user", "admin", "seller", "moderator"];
     verified?: boolean;
   };
-
-  files?: {
-    images?: Express.Multer.File[];
-  };
+  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
 }
 
 export const createProduct = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    console.log("i am in create product");
     const product: ProductDocument = req.body;
 
     const verified = req.user?.verified;
 
     if (verified === false) return errorResponse(res, 403, "Please verify your account before creating a product.");
 
-    const images = (req.files?.images as Express.Multer.File[]).map((file) => file.path);
+    const images = Array.isArray(req.files)
+      ? []
+      : (req.files?.images as Express.Multer.File[] | undefined)?.map((file) => file.path) || [];
 
     console.log("images", images);
     const newProduct = new Product({
@@ -64,7 +62,9 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     if (!dbProduct) return errorResponse(res, 404, "Product not found.");
 
     // Hol dir die neuen Bilder aus dem Upload, wenn vorhanden
-    const uploadedImages = req.files?.images as Express.Multer.File[] | undefined;
+    const uploadedImages = Array.isArray(req.files)
+      ? undefined
+      : (req.files?.images as Express.Multer.File[] | undefined);
     const images = uploadedImages?.map((file) => file.path) || []; // Leere Liste, falls keine neuen Bilder hochgeladen werden
 
     // wichtig alle Bilder müssen mit gesendet werden
@@ -178,7 +178,7 @@ export const deleteProduct = async (req: AuthRequest, res: Response): Promise<vo
   }
 };
 
-export const restoreProduct = async (req: AuthRequest, res: Response): Promise<void> => {
+export const restoreProduct = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 

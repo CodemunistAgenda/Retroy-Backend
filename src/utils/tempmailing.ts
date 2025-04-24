@@ -1,4 +1,5 @@
 // hier ist eine blacklist von email domains die ausgeschlossen werden
+// sollte noch gegen ein npm package getauscht werden
 
 export const blacklistedMails = [
   "tempmail.com",

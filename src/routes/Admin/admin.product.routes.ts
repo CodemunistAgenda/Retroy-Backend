@@ -14,7 +14,14 @@ import upload from "../../middleware/uploads";
 const router = Router();
 // ich muss noch prüfen bevor die bilder hochgeladen werden
 router.get("/", filterProducts);
-router.post("/", upload.fields([{ name: "images", maxCount: 5 }]), validateProduct, createProduct);
+router.post(
+  "/",
+  // hier wird der Body von Multer zu JSON umgewandelt da wir multidata verwenden
+  upload.fields([{ name: "images", maxCount: 5 }]),
+  // hier wird der Rest des Bodys validiert
+  validateProduct,
+  createProduct
+);
 router.get("/:productId", getProductById);
 router.get("/:productId/restore", restoreProduct);
 router.patch(

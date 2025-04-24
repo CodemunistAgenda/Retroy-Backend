@@ -27,7 +27,7 @@ router.use("/orders", protect, orderRoutes);
 // profil erstellen und bearbeiten (1 Route) / getme route für details
 router.use("/profile", protect, profileRouter);
 
-// hier findet die eigentliche arbeit
+// zubeachten hier ist das das admin check versteckt ist
 router.use("/admin", protect, roleCheck, adminRoutes);
 
 export default router;
