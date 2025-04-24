@@ -27,6 +27,10 @@ router.use("/orders", protect, orderRoutes);
 // profil erstellen und bearbeiten (1 Route) / getme route für details
 router.use("/profile", protect, profileRouter);
 
+// sonder route für Orhan
+
+router.use("/admin", protect, /* roleCheck, */ adminRoutes);
+
 // zubeachten hier ist das das admin check versteckt ist
 router.use("/admin", protect, roleCheck, adminRoutes);
 
