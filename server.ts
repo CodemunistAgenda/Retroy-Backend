@@ -28,6 +28,17 @@ WhiteList.create({
 console.log("Whitelist created"); 
 */
 
+import WhiteList from "./src/models/whileList.model.ts";
+
+const orhan = WhiteList.findOne({ email: "orhanguzell@gmail.com" });
+if (!orhan) {
+  WhiteList.create({
+    email: "orhanguzell@gmail.com",
+    username: "orhanguzel",
+  });
+  console.log("Orhan ist in der Whitelist");
+}
+
 /* app.use(
   cors({
     origin: "http://localhost:4001", // frontend URL
